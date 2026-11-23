@@ -91,6 +91,7 @@ fun WeatheraTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
-        content = content
+        shapes = WeatheraShapes,
+        content = content,
     )
 }
