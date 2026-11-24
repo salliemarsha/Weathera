@@ -41,6 +41,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sallie.weathera.domain.model.CurrentWeather
 import com.sallie.weathera.domain.model.DailyForecastItem
 import com.sallie.weathera.domain.model.HourlyForecastItem
@@ -54,8 +56,12 @@ import com.sallie.weathera.presentation.components.WeatherCard
 import com.sallie.weathera.presentation.components.WeatherCondition
 import com.sallie.weathera.presentation.components.WeatherConditionIcon
 import com.sallie.weathera.presentation.components.WeatherDetailsSection
+import com.sallie.weathera.presentation.components.WeatherErrorState
 import com.sallie.weathera.presentation.components.WeatherGradientCard
 import com.sallie.weathera.presentation.components.WeatherHouseIllustration
+import com.sallie.weathera.presentation.components.WeatherLoadingIndicator
+import com.sallie.weathera.presentation.viewmodel.WeatherUiState
+import com.sallie.weathera.presentation.viewmodel.WeatherViewModel
 import com.sallie.weathera.ui.theme.ElectricLavender
 import com.sallie.weathera.ui.theme.Primary
 import com.sallie.weathera.ui.theme.Secondary
@@ -71,6 +77,80 @@ import com.sallie.weathera.ui.theme.WeatheraTheme
  */
 @Composable
 fun HomeScreen(
+    modifier: Modifier = Modifier,
+    viewModel: WeatherViewModel = viewModel(),
+    isDarkTheme: Boolean = false,
+    onToggleTheme: () -> Unit = {},
+    onNavigateToLocations: () -> Unit = {},
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    when (val state = uiState) {
+        is WeatherUiState.Loading -> {
+            Box(
+                modifier = modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                WeatherLoadingIndicator(
+                    message = "Memuat data cuaca Surakarta..."
+                )
+            }
+        }
+        is WeatherUiState.Error -> {
+            if (state.previousData != null) {
+                Column(modifier = modifier.fillMaxSize()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.errorContainer)
+                            .padding(WeatheraSpacing.sm),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = state.message,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                        )
+                    }
+                    HomeScreenContent(
+                        currentWeather = state.previousData.currentWeather,
+                        hourlyForecast = state.previousData.hourlyForecast,
+                        dailyForecast = state.previousData.dailyForecast,
+                        isDarkTheme = isDarkTheme,
+                        onToggleTheme = onToggleTheme,
+                        onNavigateToLocations = onNavigateToLocations,
+                        onRefresh = { viewModel.refresh() },
+                    )
+                }
+            } else {
+                Box(
+                    modifier = modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    WeatherErrorState(
+                        message = state.message,
+                        onRetry = { viewModel.retry() },
+                    )
+                }
+            }
+        }
+        is WeatherUiState.Success -> {
+            HomeScreenContent(
+                currentWeather = state.currentWeather,
+                hourlyForecast = state.hourlyForecast,
+                dailyForecast = state.dailyForecast,
+                isDarkTheme = isDarkTheme,
+                onToggleTheme = onToggleTheme,
+                onNavigateToLocations = onNavigateToLocations,
+                onRefresh = { viewModel.refresh() },
+                modifier = modifier,
+            )
+        }
+    }
+}
+
+@Composable
+fun HomeScreenContent(
     modifier: Modifier = Modifier,
     currentWeather: CurrentWeather = WeatherDemoData.initialCurrentWeather,
     hourlyForecast: List<HourlyForecastItem> = WeatherDemoData.hourlyForecast,
@@ -688,7 +768,7 @@ private fun HomeFooterSection(
 @Composable
 fun HomeScreenDarkPreview() {
     WeatheraTheme(darkTheme = true) {
-        HomeScreen(
+        HomeScreenContent(
             currentWeather = WeatherDemoData.initialCurrentWeather,
             hourlyForecast = WeatherDemoData.hourlyForecast,
             dailyForecast = WeatherDemoData.dailyForecast,
@@ -704,7 +784,7 @@ fun HomeScreenDarkPreview() {
 @Composable
 fun HomeScreenLightPreview() {
     WeatheraTheme(darkTheme = false) {
-        HomeScreen(
+        HomeScreenContent(
             currentWeather = WeatherDemoData.initialCurrentWeather,
             hourlyForecast = WeatherDemoData.hourlyForecast,
             dailyForecast = WeatherDemoData.dailyForecast,
