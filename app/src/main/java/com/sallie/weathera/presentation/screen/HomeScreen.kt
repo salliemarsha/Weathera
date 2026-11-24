@@ -1,5 +1,6 @@
 package com.sallie.weathera.presentation.screen
 
+import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -36,6 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -160,63 +162,100 @@ fun HomeScreenContent(
     onNavigateToLocations: () -> Unit = {},
     onRefresh: () -> Unit = {},
 ) {
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     val scrollState = rememberScrollState()
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
-            .padding(vertical = WeatheraSpacing.lg),
-        verticalArrangement = Arrangement.spacedBy(WeatheraSpacing.xl),
-    ) {
-        // ==========================================
-        // A. HEADER & LOCATION
-        // ==========================================
-        HomeHeaderSection(
-            cityName = currentWeather.cityName,
-            country = currentWeather.country,
-            isDarkTheme = isDarkTheme,
-            onToggleTheme = onToggleTheme,
-            onSearchClick = onNavigateToLocations,
-            onRefreshClick = onRefresh,
-            modifier = Modifier.padding(horizontal = WeatheraSpacing.lg),
-        )
+    if (isLandscape) {
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(vertical = WeatheraSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(WeatheraSpacing.lg),
+        ) {
+            HomeHeaderSection(
+                cityName = currentWeather.cityName,
+                country = currentWeather.country,
+                isDarkTheme = isDarkTheme,
+                onToggleTheme = onToggleTheme,
+                onSearchClick = onNavigateToLocations,
+                onRefreshClick = onRefresh,
+                modifier = Modifier.padding(horizontal = WeatheraSpacing.lg),
+            )
 
-        // ==========================================
-        // B. CURRENT WEATHER (HERO SECTION + HOUSE)
-        // ==========================================
-        HeroCurrentWeatherCard(
-            weather = currentWeather,
-            modifier = Modifier.padding(horizontal = WeatheraSpacing.lg),
-        )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = WeatheraSpacing.lg),
+                horizontalArrangement = Arrangement.spacedBy(WeatheraSpacing.lg),
+            ) {
+                Box(modifier = Modifier.weight(0.45f)) {
+                    HeroCurrentWeatherCard(
+                        weather = currentWeather,
+                    )
+                }
+                Column(
+                    modifier = Modifier.weight(0.55f),
+                    verticalArrangement = Arrangement.spacedBy(WeatheraSpacing.lg),
+                ) {
+                    HourlyForecastSection(
+                        hourlyItems = hourlyForecast,
+                        dailyItems = dailyForecast,
+                    )
+                    WeatherDetailsSection(
+                        weather = currentWeather,
+                        dailyForecast = dailyForecast,
+                    )
+                    HomeFooterSection(
+                        lastUpdated = currentWeather.lastUpdated,
+                    )
+                }
+            }
 
-        // ==========================================
-        // C. FORECAST TABS & HOURLY FORECAST (24 HOURS)
-        // ==========================================
-        HourlyForecastSection(
-            hourlyItems = hourlyForecast,
-            dailyItems = dailyForecast,
-        )
+            Spacer(modifier = Modifier.height(84.dp))
+        }
+    } else {
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(vertical = WeatheraSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(WeatheraSpacing.xl),
+        ) {
+            HomeHeaderSection(
+                cityName = currentWeather.cityName,
+                country = currentWeather.country,
+                isDarkTheme = isDarkTheme,
+                onToggleTheme = onToggleTheme,
+                onSearchClick = onNavigateToLocations,
+                onRefreshClick = onRefresh,
+                modifier = Modifier.padding(horizontal = WeatheraSpacing.lg),
+            )
 
-        // ==========================================
-        // D. WEATHER DETAILS DASHBOARD (SECTION 2)
-        // ==========================================
-        WeatherDetailsSection(
-            weather = currentWeather,
-            dailyForecast = dailyForecast,
-            modifier = Modifier.padding(horizontal = WeatheraSpacing.lg),
-        )
+            HeroCurrentWeatherCard(
+                weather = currentWeather,
+                modifier = Modifier.padding(horizontal = WeatheraSpacing.lg),
+            )
 
-        // ==========================================
-        // E. FOOTER & WEATHER ATTRIBUTION
-        // ==========================================
-        HomeFooterSection(
-            lastUpdated = currentWeather.lastUpdated,
-            modifier = Modifier.padding(horizontal = WeatheraSpacing.lg),
-        )
+            HourlyForecastSection(
+                hourlyItems = hourlyForecast,
+                dailyItems = dailyForecast,
+            )
 
-        // Bottom space so content is never obscured by floating bottom nav bar
-        Spacer(modifier = Modifier.height(84.dp))
+            WeatherDetailsSection(
+                weather = currentWeather,
+                dailyForecast = dailyForecast,
+                modifier = Modifier.padding(horizontal = WeatheraSpacing.lg),
+            )
+
+            HomeFooterSection(
+                lastUpdated = currentWeather.lastUpdated,
+                modifier = Modifier.padding(horizontal = WeatheraSpacing.lg),
+            )
+
+            Spacer(modifier = Modifier.height(84.dp))
+        }
     }
 }
 

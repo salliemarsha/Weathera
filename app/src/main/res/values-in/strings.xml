@@ -1,0 +1,52 @@
+<resources>
+    <string name="app_name">Weathera</string>
+    <string name="nav_home">Beranda</string>
+    <string name="nav_locations">Lokasi</string>
+    <string name="nav_settings">Pengaturan</string>
+
+    <string name="search_city_hint">Cari nama kota…</string>
+    <string name="tap_to_change_city">Weathera • Ketuk untuk ubah kota</string>
+    <string name="hourly_forecast">Prakiraan 24 Jam</string>
+    <string name="daily_forecast">Prakiraan 7 Hari</string>
+    <string name="weather_details">Rincian Cuaca</string>
+    <string name="feels_like">Terasa Seperti</string>
+    <string name="humidity">Kelembapan</string>
+    <string name="wind_speed">Kecepatan Angin</string>
+    <string name="wind_direction">Arah Angin</string>
+    <string name="uv_index">Indeks UV</string>
+    <string name="sunrise">Matahari Terbit</string>
+    <string name="sunset">Matahari Terbenam</string>
+    <string name="precipitation">Presipitasi</string>
+    <string name="rain_chance">Peluang Hujan</string>
+    <string name="last_updated">Terakhir diperbarui</string>
+    <string name="demo_attribution">Data cuaca langsung dari Open-Meteo API</string>
+
+    <string name="locations_title">Pencarian &amp; Lokasi</string>
+    <string name="locations_subtitle">Cari dan pilih lokasi kota aktif</string>
+    <string name="search_placeholder">Ketik nama kota (misal: Surakarta, Jakarta)…</string>
+    <string name="active_location_label">Lokasi Aktif</string>
+    <string name="search_results_title">Hasil Pencarian</string>
+    <string name="no_results_found">Kota tidak ditemukan untuk "%1$s"</string>
+    <string name="searching_location">Mencari lokasi kota…</string>
+    <string name="select_as_active">Pilih Lokasi Aktif</string>
+    <string name="currently_active">Aktif</string>
+    <string name="search_error">Pencarian gagal. Periksa koneksi jaringan Anda.</string>
+
+    <string name="settings_title">Pengaturan</string>
+    <string name="appearance_section">Tampilan &amp; Tema</string>
+    <string name="theme_system">Default Sistem</string>
+    <string name="theme_light">Mode Terang</string>
+    <string name="theme_dark">Mode Gelap (Night)</string>
+    <string name="language_section">Bahasa</string>
+    <string name="language_indonesian">Bahasa Indonesia</string>
+    <string name="language_english">English</string>
+    <string name="about_section">Tentang Aplikasi</string>
+    <string name="about_description">Weathera adalah aplikasi cuaca modern berbasis Jetpack Compose, Material 3, dan Open-Meteo API.</string>
+    <string name="app_version">Versi 1.0.0</string>
+
+    <string name="loading_weather">Memuat data cuaca…</string>
+    <string name="retry">Coba Lagi</string>
+    <string name="clear">Hapus</string>
+    <string name="error_title">Gagal Memuat Data</string>
+    <string name="error_network">Tidak ada koneksi internet. Silakan periksa jaringan Anda dan coba lagi.</string>
+</resources>

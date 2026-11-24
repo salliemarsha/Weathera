@@ -42,6 +42,7 @@ import com.sallie.weathera.ui.theme.Secondary
 enum class NavDestination {
     HOME,
     LOCATIONS,
+    SETTINGS,
 }
 
 /**

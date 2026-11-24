@@ -7,7 +7,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
-    private const val BASE_URL = "https://api.open-meteo.com/"
+    private const val BASE_WEATHER_URL = "https://api.open-meteo.com/"
+    private const val BASE_GEOCODING_URL = "https://geocoding-api.open-meteo.com/"
 
     private val okHttpClient: OkHttpClient by lazy {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
@@ -22,10 +23,19 @@ object RetrofitClient {
 
     val weatherApiService: WeatherApiService by lazy {
         Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(BASE_WEATHER_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(WeatherApiService::class.java)
+    }
+
+    val geocodingApiService: GeocodingApiService by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_GEOCODING_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(GeocodingApiService::class.java)
     }
 }

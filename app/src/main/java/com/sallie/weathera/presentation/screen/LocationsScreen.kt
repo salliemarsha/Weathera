@@ -1,6 +1,8 @@
 package com.sallie.weathera.presentation.screen
 
+import android.content.res.Configuration
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,8 +24,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -31,59 +31,91 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.sallie.weathera.domain.model.CityWeather
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.sallie.weathera.R
+import com.sallie.weathera.data.local.UserPreferences
+import com.sallie.weathera.domain.model.SearchResultLocation
+import com.sallie.weathera.presentation.components.LocationPinIcon
 import com.sallie.weathera.presentation.components.SearchHeaderIcon
-import com.sallie.weathera.presentation.components.SectionHeader
-import com.sallie.weathera.presentation.components.WeatherConditionIcon
+import com.sallie.weathera.presentation.components.WeatherCard
 import com.sallie.weathera.presentation.components.WeatherEmptyState
+import com.sallie.weathera.presentation.components.WeatherLoadingIndicator
+import com.sallie.weathera.presentation.components.WeatherPrimaryButton
+import com.sallie.weathera.presentation.viewmodel.LocationsViewModel
 import com.sallie.weathera.ui.theme.ElectricLavender
 import com.sallie.weathera.ui.theme.Primary
-import com.sallie.weathera.ui.theme.Secondary
 import com.sallie.weathera.ui.theme.WeatheraCornerRadius
 import com.sallie.weathera.ui.theme.WeatheraSpacing
 
-/**
- * Locations Screen (Search & Saved Locations)
- * Directly inspired by Screen 3 in the reference image (slanted/curved violet weather cards).
- */
 @Composable
 fun LocationsScreen(
-    savedCities: List<CityWeather>,
-    allDemoCities: List<CityWeather>,
-    activeCity: CityWeather,
-    onSelectCity: (CityWeather) -> Unit,
-    onToggleSaveCity: (CityWeather) -> Unit,
-    onBackToHome: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: LocationsViewModel = viewModel(),
+    onNavigateToHome: () -> Unit = {},
+) {
+    val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
+    val isSearching by viewModel.isSearching.collectAsStateWithLifecycle()
+    val searchResults by viewModel.searchResults.collectAsStateWithLifecycle()
+    val searchError by viewModel.searchError.collectAsStateWithLifecycle()
+    val preferences by viewModel.userPreferences.collectAsStateWithLifecycle()
+
+    LocationsScreenContent(
+        searchQuery = searchQuery,
+        isSearching = isSearching,
+        searchResults = searchResults,
+        searchError = searchError,
+        preferences = preferences,
+        onQueryChange = { viewModel.onQueryChanged(it) },
+        onSearchSubmit = { viewModel.onSearchClicked() },
+        onClear = { viewModel.onClearQuery() },
+        onSelectLocation = { location ->
+            viewModel.selectLocation(location) {
+                onNavigateToHome()
+            }
+        },
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun LocationsScreenContent(
+    searchQuery: String,
+    isSearching: Boolean,
+    searchResults: List<SearchResultLocation>,
+    searchError: String?,
+    preferences: UserPreferences,
+    onQueryChange: (String) -> Unit,
+    onSearchSubmit: () -> Unit,
+    onClear: () -> Unit,
+    onSelectLocation: (SearchResultLocation) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var searchQuery by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
-    val searchResults = remember(searchQuery, allDemoCities) {
-        if (searchQuery.isBlank()) {
-            emptyList()
-        } else {
-            allDemoCities.filter {
-                it.cityName.contains(searchQuery, ignoreCase = true) ||
-                    it.country.contains(searchQuery, ignoreCase = true)
-            }
-        }
-    }
+    val popularPresetCities = listOf(
+        SearchResultLocation("p1", "Surakarta", "Indonesia", "Jawa Tengah", -7.5755, 110.8243, "Asia/Jakarta"),
+        SearchResultLocation("p2", "Jakarta", "Indonesia", "DKI Jakarta", -6.2088, 106.8456, "Asia/Jakarta"),
+        SearchResultLocation("p3", "Yogyakarta", "Indonesia", "DIY", -7.7956, 110.3695, "Asia/Jakarta"),
+        SearchResultLocation("p4", "Bandung", "Indonesia", "Jawa Barat", -6.9175, 107.6191, "Asia/Jakarta"),
+        SearchResultLocation("p5", "Surabaya", "Indonesia", "Jawa Timur", -7.2575, 112.7521, "Asia/Jakarta"),
+        SearchResultLocation("p6", "Denpasar", "Indonesia", "Bali", -8.6705, 115.2126, "Asia/Makassar"),
+        SearchResultLocation("p7", "Kathmandu", "Nepal", "Bagmati", 27.7172, 85.3240, "Asia/Kathmandu"),
+        SearchResultLocation("p8", "Montreal", "Canada", "Quebec", 45.5017, -73.5673, "America/Toronto"),
+    )
 
     Column(
         modifier = modifier
@@ -91,379 +123,337 @@ fun LocationsScreen(
             .padding(horizontal = WeatheraSpacing.lg)
             .padding(top = WeatheraSpacing.lg),
     ) {
-        // 1. Header
-        LocationsHeader(
-            onBackClick = onBackToHome,
-        )
+        // Header & Title
+        Column {
+            Text(
+                text = stringResource(R.string.locations_title),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            Text(
+                text = stringResource(R.string.locations_subtitle),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
 
         Spacer(modifier = Modifier.height(WeatheraSpacing.md))
 
-        // 2. Search City Bar
+        // Search Bar
         LocationSearchBar(
             query = searchQuery,
-            onQueryChange = { searchQuery = it },
+            onQueryChange = onQueryChange,
+            onSearchSubmit = {
+                onSearchSubmit()
+                focusManager.clearFocus()
+            },
             onClear = {
-                searchQuery = ""
+                onClear()
                 focusManager.clearFocus()
             },
         )
 
         Spacer(modifier = Modifier.height(WeatheraSpacing.lg))
 
-        // 3. Main List Content (Search Results OR Saved Locations)
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(WeatheraSpacing.md),
-        ) {
-            // Case A: User is searching
-            if (searchQuery.isNotBlank()) {
-                item {
-                    SectionHeader(
-                        title = "Hasil Pencarian",
-                        subtitle = "${searchResults.size} kota ditemukan untuk \"$searchQuery\"",
-                    )
-                }
-
-                if (searchResults.isEmpty()) {
-                    item {
-                        WeatherEmptyState(
-                            title = "Kota Tidak Ditemukan",
-                            description = "Coba gunakan nama kota demo lain seperti Surakarta, Jakarta, Kathmandu, atau Denpasar.",
-                        )
-                    }
-                } else {
-                    items(searchResults, key = { it.id }) { city ->
-                        val isSaved = savedCities.any { it.id == city.id }
-                        val isSelected = city.id == activeCity.id
-
-                        SavedLocationCard(
-                            city = city.copy(isSaved = isSaved),
-                            isActive = isSelected,
-                            onCardClick = {
-                                onSelectCity(city)
-                                onBackToHome()
-                            },
-                            onToggleSave = { onToggleSaveCity(city) },
-                        )
-                    }
-                }
-            } else {
-                // Case B: Saved Locations List
-                item {
-                    SectionHeader(
-                        title = "Lokasi Tersimpan",
-                        subtitle = "${savedCities.size} kota dalam pantauan cuaca Anda",
-                    )
-                }
-
-                if (savedCities.isEmpty()) {
-                    item {
-                        WeatherEmptyState(
-                            title = "Belum Ada Lokasi Tersimpan",
-                            description = "Gunakan kolom pencarian di atas untuk menemukan kota favorit dan simpan di sini.",
-                        )
-                    }
-                } else {
-                    items(savedCities, key = { it.id }) { city ->
-                        val isSelected = city.id == activeCity.id
-                        SavedLocationCard(
-                            city = city,
-                            isActive = isSelected,
-                            onCardClick = {
-                                onSelectCity(city)
-                                onBackToHome()
-                            },
-                            onToggleSave = { onToggleSaveCity(city) },
-                        )
-                    }
-                }
-            }
-
-            // Bottom space for floating navigation bar
-            item {
-                Spacer(modifier = Modifier.height(96.dp))
-            }
-        }
-    }
-}
-
-// -------------------------------------------------------------
-// Component A: Locations Header
-// -------------------------------------------------------------
-
-@Composable
-private fun LocationsHeader(
-    onBackClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.clickable(onClick = onBackClick),
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surface,
-                border = androidx.compose.foundation.BorderStroke(
-                    1.dp,
-                    MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                ),
-                modifier = Modifier.size(38.dp),
+        if (isLandscape) {
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.spacedBy(WeatheraSpacing.lg),
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = "‹",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 26.sp,
-                    )
+                // Left Column: Active Location Card
+                Column(
+                    modifier = Modifier
+                        .weight(0.4f)
+                        .padding(bottom = 84.dp),
+                ) {
+                    ActiveLocationCard(preferences = preferences)
                 }
-            }
 
-            Spacer(modifier = Modifier.width(WeatheraSpacing.sm))
-
-            Column {
-                Text(
-                    text = "Weather Locations",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-                Text(
-                    text = "Kelola kota & pantauan cuaca",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-
-        Surface(
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.surface,
-            border = androidx.compose.foundation.BorderStroke(
-                1.dp,
-                MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-            ),
-            modifier = Modifier.size(38.dp),
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(
-                    text = "•••",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
-}
-
-// -------------------------------------------------------------
-// Component B: Location Search Bar
-// -------------------------------------------------------------
-
-@Composable
-fun LocationSearchBar(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    onClear: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    OutlinedTextField(
-        value = query,
-        onValueChange = onQueryChange,
-        modifier = modifier
-            .fillMaxWidth()
-            .height(54.dp),
-        shape = RoundedCornerShape(WeatheraCornerRadius.Large),
-        placeholder = {
-            Text(
-                text = "Search for a city or airport...",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-            )
-        },
-        leadingIcon = {
-            SearchHeaderIcon(
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(18.dp),
-            )
-        },
-        trailingIcon = {
-            if (query.isNotEmpty()) {
+                // Right Column: Search Results / Popular Preset Cities
                 Box(
                     modifier = Modifier
-                        .size(24.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
-                        .clickable(onClick = onClear),
-                    contentAlignment = Alignment.Center,
+                        .weight(0.6f)
+                        .padding(bottom = 84.dp),
                 ) {
-                    Text(
-                        text = "✕",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurface,
+                    LocationResultsList(
+                        searchQuery = searchQuery,
+                        isSearching = isSearching,
+                        searchResults = searchResults,
+                        searchError = searchError,
+                        popularPresetCities = popularPresetCities,
+                        activeCityName = preferences.activeCityName,
+                        onSelectLocation = onSelectLocation,
                     )
                 }
             }
-        },
-        singleLine = true,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = MaterialTheme.colorScheme.surface,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-            focusedBorderColor = Primary,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
-        ),
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-    )
+        } else {
+            Column(modifier = Modifier.fillMaxSize()) {
+                ActiveLocationCard(preferences = preferences)
+
+                Spacer(modifier = Modifier.height(WeatheraSpacing.md))
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(bottom = 84.dp),
+                ) {
+                    LocationResultsList(
+                        searchQuery = searchQuery,
+                        isSearching = isSearching,
+                        searchResults = searchResults,
+                        searchError = searchError,
+                        popularPresetCities = popularPresetCities,
+                        activeCityName = preferences.activeCityName,
+                        onSelectLocation = onSelectLocation,
+                    )
+                }
+            }
+        }
+    }
 }
 
-// -------------------------------------------------------------
-// Component C: Saved Location Card (Inspired by Reference 3)
-// -------------------------------------------------------------
-
 @Composable
-fun SavedLocationCard(
-    city: CityWeather,
-    isActive: Boolean,
-    onCardClick: () -> Unit,
-    onToggleSave: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    // Unique rounded card with rich violet gradient inspired by Kathmandu & Montreal cards
-    Card(
-        onClick = onCardClick,
-        modifier = modifier
-            .fillMaxWidth()
-            .shadow(
-                elevation = if (isActive) 10.dp else 4.dp,
-                shape = RoundedCornerShape(WeatheraCornerRadius.ExtraLarge),
-                ambientColor = Primary.copy(alpha = 0.35f),
-                spotColor = Primary.copy(alpha = 0.45f),
-            ),
-        shape = RoundedCornerShape(WeatheraCornerRadius.ExtraLarge),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        border = if (isActive) {
-            androidx.compose.foundation.BorderStroke(2.dp, ElectricLavender)
-        } else {
-            androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.15f))
-        },
+private fun ActiveLocationCard(preferences: UserPreferences) {
+    WeatherCard(
+        borderColor = Primary.copy(alpha = 0.8f),
+        borderWidth = 1.5.dp,
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    Brush.horizontalGradient(
-                        colors = if (isActive) {
-                            listOf(Color(0xFF6B42DC), Color(0xFF8B64EE))
-                        } else {
-                            listOf(Color(0xFF4B328C), Color(0xFF6444B6))
-                        },
-                    ),
-                )
-                .padding(WeatheraSpacing.xl),
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f),
             ) {
-                // Left info: Temperature, High/Low, City, Country
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.Top) {
-                        Text(
-                            text = "${city.temperature}°",
-                            style = MaterialTheme.typography.displayLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            fontSize = 48.sp,
-                            lineHeight = 52.sp,
-                        )
-                        if (isActive) {
-                            Spacer(modifier = Modifier.width(WeatheraSpacing.sm))
-                            Box(
-                                modifier = Modifier
-                                    .padding(top = 4.dp)
-                                    .clip(RoundedCornerShape(WeatheraCornerRadius.Small))
-                                    .background(ElectricLavender.copy(alpha = 0.35f))
-                                    .padding(horizontal = WeatheraSpacing.sm, vertical = 2.dp),
-                            ) {
-                                Text(
-                                    text = "Aktif",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
-                                )
-                            }
-                        }
-                    }
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .background(Primary.copy(alpha = 0.12f), shape = CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    LocationPinIcon(color = Primary, modifier = Modifier.size(24.dp))
+                }
 
-                    Spacer(modifier = Modifier.height(WeatheraSpacing.xs))
+                Spacer(modifier = Modifier.width(WeatheraSpacing.md))
 
+                Column {
                     Text(
-                        text = "H:${city.tempMax}°  L:${city.tempMin}°",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.85f),
-                        fontWeight = FontWeight.Medium,
+                        text = stringResource(R.string.active_location_label),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Primary,
+                        fontWeight = FontWeight.Bold,
                     )
-
-                    Spacer(modifier = Modifier.height(WeatheraSpacing.xs))
-
                     Text(
-                        text = "${city.cityName}, ${city.country}",
+                        text = "${preferences.activeCityName}, ${preferences.activeCountry}",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
+            }
 
-                // Right info: Weather Condition Icon & Save/Bookmark Toggle
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.SpaceBetween,
+            Surface(
+                shape = CircleShape,
+                color = Primary,
+            ) {
+                Text(
+                    text = stringResource(R.string.currently_active),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = androidx.compose.ui.graphics.Color.White,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = WeatheraSpacing.md, vertical = WeatheraSpacing.xs),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LocationSearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onSearchSubmit: () -> Unit,
+    onClear: () -> Unit,
+) {
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        modifier = Modifier.fillMaxWidth(),
+        placeholder = {
+            Text(
+                text = stringResource(R.string.search_placeholder),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+            )
+        },
+        leadingIcon = {
+            SearchHeaderIcon(color = Primary, modifier = Modifier.size(20.dp))
+        },
+        trailingIcon = {
+            if (query.isNotEmpty()) {
+                Surface(
+                    onClick = onClear,
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.size(24.dp),
                 ) {
-                    // Save / Bookmark action button
-                    Box(
-                        modifier = Modifier
-                            .size(34.dp)
-                            .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.2f))
-                            .clickable(onClick = onToggleSave),
-                        contentAlignment = Alignment.Center,
-                    ) {
+                    Box(contentAlignment = Alignment.Center) {
                         Text(
-                            text = if (city.isSaved) "★" else "☆",
-                            fontSize = 16.sp,
-                            color = if (city.isSaved) Color(0xFFFBBF24) else Color.White,
+                            text = "✕",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
+                }
+            }
+        },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(onSearch = { onSearchSubmit() }),
+        shape = RoundedCornerShape(WeatheraCornerRadius.Medium),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = Primary,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+            focusedContainerColor = MaterialTheme.colorScheme.surface,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+        ),
+    )
+}
 
-                    Spacer(modifier = Modifier.height(WeatheraSpacing.sm))
-
-                    WeatherConditionIcon(
-                        condition = city.condition,
-                        size = 56.dp,
-                    )
-
-                    Spacer(modifier = Modifier.height(WeatheraSpacing.xs))
-
+@Composable
+private fun LocationResultsList(
+    searchQuery: String,
+    isSearching: Boolean,
+    searchResults: List<SearchResultLocation>,
+    searchError: String?,
+    popularPresetCities: List<SearchResultLocation>,
+    activeCityName: String,
+    onSelectLocation: (SearchResultLocation) -> Unit,
+) {
+    when {
+        isSearching -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                WeatherLoadingIndicator(
+                    message = stringResource(R.string.searching_location),
+                )
+            }
+        }
+        searchQuery.isNotBlank() -> {
+            if (searchResults.isNotEmpty()) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(WeatheraSpacing.sm),
+                ) {
+                    item {
+                        Text(
+                            text = stringResource(R.string.search_results_title),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = WeatheraSpacing.xs),
+                        )
+                    }
+                    items(searchResults, key = { it.id }) { item ->
+                        SearchResultItemCard(
+                            location = item,
+                            isActive = (item.cityName.equals(activeCityName, ignoreCase = true)),
+                            onSelect = { onSelectLocation(item) },
+                        )
+                    }
+                }
+            } else {
+                WeatherEmptyState(
+                    title = "Kota Tidak Ditemukan",
+                    description = stringResource(R.string.no_results_found, searchQuery),
+                )
+            }
+        }
+        else -> {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(WeatheraSpacing.sm),
+            ) {
+                item {
                     Text(
-                        text = city.condition.displayName,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Medium,
-                        color = ElectricLavender,
-                        maxLines = 1,
+                        text = "Kota Populer / Preset",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = WeatheraSpacing.xs),
                     )
                 }
+                items(popularPresetCities, key = { it.id }) { item ->
+                    SearchResultItemCard(
+                        location = item,
+                        isActive = (item.cityName.equals(activeCityName, ignoreCase = true)),
+                        onSelect = { onSelectLocation(item) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SearchResultItemCard(
+    location: SearchResultLocation,
+    isActive: Boolean,
+    onSelect: () -> Unit,
+) {
+    WeatherCard(
+        onClick = onSelect,
+        borderColor = if (isActive) Primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+        contentPadding = WeatheraSpacing.md,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = location.cityName,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                val regionText = listOfNotNull(location.adminRegion, location.country)
+                    .filter { it.isNotBlank() }
+                    .joinToString(", ")
+                Text(
+                    text = regionText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            if (isActive) {
+                Surface(
+                    shape = CircleShape,
+                    color = Primary.copy(alpha = 0.15f),
+                ) {
+                    Text(
+                        text = stringResource(R.string.currently_active),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Primary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = WeatheraSpacing.md, vertical = WeatheraSpacing.xs),
+                    )
+                }
+            } else {
+                WeatherPrimaryButton(
+                    text = stringResource(R.string.select_as_active),
+                    onClick = onSelect,
+                )
             }
         }
     }

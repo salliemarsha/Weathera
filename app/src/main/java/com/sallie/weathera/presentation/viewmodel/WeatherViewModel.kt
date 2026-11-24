@@ -1,7 +1,10 @@
 package com.sallie.weathera.presentation.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.sallie.weathera.data.local.UserPreferences
+import com.sallie.weathera.data.local.UserPreferencesRepository
 import com.sallie.weathera.data.repository.WeatherRepository
 import com.sallie.weathera.data.repository.WeatherRepositoryImpl
 import com.sallie.weathera.domain.model.CurrentWeather
@@ -32,18 +35,43 @@ sealed interface WeatherUiState {
     ) : WeatherUiState
 }
 
-class WeatherViewModel(
+class WeatherViewModel @JvmOverloads constructor(
+    application: Application,
     private val repository: WeatherRepository = WeatherRepositoryImpl(),
-) : ViewModel() {
+    private val preferencesRepository: UserPreferencesRepository = UserPreferencesRepository.getInstance(application),
+) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow<WeatherUiState>(WeatherUiState.Loading)
     val uiState: StateFlow<WeatherUiState> = _uiState.asStateFlow()
 
+    private var currentPreferences = UserPreferences()
+
     init {
-        loadWeatherData()
+        viewModelScope.launch {
+            try {
+                preferencesRepository.userPreferencesFlow.collect { prefs ->
+                    currentPreferences = prefs
+                    fetchWeatherData(
+                        isRefresh = false,
+                        cityName = prefs.activeCityName,
+                        country = prefs.activeCountry,
+                        latitude = prefs.activeLatitude,
+                        longitude = prefs.activeLongitude,
+                    )
+                }
+            } catch (_: Exception) {
+                fetchWeatherData(isRefresh = false)
+            }
+        }
     }
 
-    fun fetchWeatherData(isRefresh: Boolean = false) {
+    fun fetchWeatherData(
+        isRefresh: Boolean = false,
+        cityName: String = currentPreferences.activeCityName,
+        country: String = currentPreferences.activeCountry,
+        latitude: Double = currentPreferences.activeLatitude,
+        longitude: Double = currentPreferences.activeLongitude,
+    ) {
         viewModelScope.launch {
             val currentState = _uiState.value
             if (isRefresh) {
@@ -57,7 +85,12 @@ class WeatherViewModel(
             }
 
             try {
-                val result = repository.getWeatherForecast()
+                val result = repository.getWeatherForecast(
+                    latitude = latitude,
+                    longitude = longitude,
+                    cityName = cityName,
+                    country = country,
+                )
                 _uiState.value = WeatherUiState.Success(
                     currentWeather = result.currentWeather,
                     hourlyForecast = result.hourlyForecast,
@@ -93,9 +126,5 @@ class WeatherViewModel(
 
     fun refresh() {
         fetchWeatherData(isRefresh = true)
-    }
-
-    private fun loadWeatherData() {
-        fetchWeatherData(isRefresh = false)
     }
 }
