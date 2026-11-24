@@ -22,6 +22,7 @@ import kotlin.math.sin
 
 enum class WeatherCondition(val displayName: String) {
     CLEAR_SKY("Cerah"),
+    NIGHT_CLEAR("Malam Cerah"),
     PARTLY_CLOUDY("Sebagian Berawan"),
     CLOUDY("Berawan"),
     FOG("Berkabut"),
@@ -31,9 +32,9 @@ enum class WeatherCondition(val displayName: String) {
     SNOW("Salju");
 
     companion object {
-        fun fromWmoCode(code: Int): WeatherCondition {
+        fun fromWmoCode(code: Int, isDay: Boolean = true): WeatherCondition {
             return when (code) {
-                0 -> CLEAR_SKY
+                0 -> if (isDay) CLEAR_SKY else NIGHT_CLEAR
                 1, 2 -> PARTLY_CLOUDY
                 3 -> CLOUDY
                 45, 48 -> FOG
@@ -53,13 +54,14 @@ fun WeatherConditionIcon(
     modifier: Modifier = Modifier,
     size: Dp = 48.dp,
     tint: Color? = null,
-) {
+    ) {
     Canvas(modifier = modifier.size(size)) {
         val w = this.size.width
         val h = this.size.height
 
         when (condition) {
             WeatherCondition.CLEAR_SKY -> drawSun(tint ?: Color(0xFFF59E0B))
+            WeatherCondition.NIGHT_CLEAR -> drawMoon(tint ?: Color(0xFFFDE68A))
             WeatherCondition.PARTLY_CLOUDY -> {
                 drawSun(
                     color = Color(0xFFF59E0B),
@@ -202,6 +204,29 @@ private fun DrawScope.drawSnowFlakes(color: Color) {
     }
 }
 
+private fun DrawScope.drawMoon(color: Color) {
+    val cx = size.width * 0.46f
+    val cy = size.height * 0.48f
+    val r = size.width * 0.30f
+    val moonPath = Path().apply {
+        moveTo(cx + r * 0.45f, cy - r * 0.88f)
+        cubicTo(cx - r * 0.7f, cy - r * 0.7f, cx - r * 0.7f, cy + r * 0.7f, cx + r * 0.45f, cy + r * 0.88f)
+        cubicTo(cx - r * 0.05f, cy + r * 0.5f, cx - r * 0.05f, cy - r * 0.5f, cx + r * 0.45f, cy - r * 0.88f)
+        close()
+    }
+    drawPath(path = moonPath, color = color)
+    drawCircle(
+        color = Color(0xFFFDE68A),
+        radius = size.width * 0.04f,
+        center = Offset(size.width * 0.74f, size.height * 0.28f),
+    )
+    drawCircle(
+        color = Color(0xFFFDE68A).copy(alpha = 0.8f),
+        radius = size.width * 0.025f,
+        center = Offset(size.width * 0.84f, size.height * 0.42f),
+    )
+}
+
 // ==========================================
 // Vector Icons for Weather Metrics
 // ==========================================
@@ -283,5 +308,105 @@ fun PrecipitationIcon(modifier: Modifier = Modifier, color: Color = Primary) {
                 cap = StrokeCap.Round,
             )
         }
+    }
+}
+
+@Composable
+fun UvIndexIcon(modifier: Modifier = Modifier, color: Color = Primary) {
+    Canvas(modifier = modifier.size(20.dp)) {
+        val w = size.width
+        val h = size.height
+        val r = w * 0.22f
+        drawCircle(color = color, radius = r, center = Offset(w / 2f, h / 2f))
+        val count = 8
+        for (i in 0 until count) {
+            val angle = i * (Math.PI * 2 / count)
+            val startX = (w / 2f + r * 1.35f * cos(angle)).toFloat()
+            val startY = (h / 2f + r * 1.35f * sin(angle)).toFloat()
+            val endX = (w / 2f + r * 1.85f * cos(angle)).toFloat()
+            val endY = (h / 2f + r * 1.85f * sin(angle)).toFloat()
+            drawLine(
+                color = color,
+                start = Offset(startX, startY),
+                end = Offset(endX, endY),
+                strokeWidth = w * 0.1f,
+                cap = StrokeCap.Round,
+            )
+        }
+    }
+}
+
+@Composable
+fun LocationPinIcon(modifier: Modifier = Modifier, color: Color = Primary) {
+    Canvas(modifier = modifier.size(20.dp)) {
+        val w = size.width
+        val h = size.height
+        val path = Path().apply {
+            moveTo(w * 0.5f, h * 0.95f)
+            cubicTo(w * 0.2f, h * 0.65f, w * 0.15f, h * 0.45f, w * 0.15f, h * 0.35f)
+            cubicTo(w * 0.15f, h * 0.15f, w * 0.3f, h * 0.05f, w * 0.5f, h * 0.05f)
+            cubicTo(w * 0.7f, h * 0.05f, w * 0.85f, h * 0.15f, w * 0.85f, h * 0.35f)
+            cubicTo(w * 0.85f, h * 0.45f, w * 0.8f, h * 0.65f, w * 0.5f, h * 0.95f)
+            close()
+        }
+        drawPath(path = path, color = color)
+        drawCircle(color = Color.White, radius = w * 0.13f, center = Offset(w * 0.5f, h * 0.35f))
+    }
+}
+
+@Composable
+fun SearchHeaderIcon(modifier: Modifier = Modifier, color: Color = Primary) {
+    Canvas(modifier = modifier.size(20.dp)) {
+        val w = size.width
+        val h = size.height
+        val stroke = Stroke(width = w * 0.13f, cap = StrokeCap.Round)
+        drawCircle(
+            color = color,
+            radius = w * 0.30f,
+            center = Offset(w * 0.42f, h * 0.42f),
+            style = stroke,
+        )
+        drawLine(
+            color = color,
+            start = Offset(w * 0.64f, h * 0.64f),
+            end = Offset(w * 0.88f, h * 0.88f),
+            strokeWidth = w * 0.13f,
+            cap = StrokeCap.Round,
+        )
+    }
+}
+
+@Composable
+fun RefreshIcon(modifier: Modifier = Modifier, color: Color = Primary) {
+    Canvas(modifier = modifier.size(20.dp)) {
+        val w = size.width
+        val h = size.height
+        val stroke = Stroke(width = w * 0.12f, cap = StrokeCap.Round)
+        val r = w * 0.34f
+        val cx = w * 0.5f
+        val cy = h * 0.5f
+
+        // Draw 270 degree circular arc
+        drawArc(
+            color = color,
+            startAngle = 45f,
+            sweepAngle = 270f,
+            useCenter = false,
+            topLeft = Offset(cx - r, cy - r),
+            size = Size(r * 2f, r * 2f),
+            style = stroke,
+        )
+
+        // Arrow head at start of arc (around top-right)
+        val arrowAngle = (45f) * (Math.PI / 180f)
+        val ax = cx + (r * cos(arrowAngle)).toFloat()
+        val ay = cy + (r * sin(arrowAngle)).toFloat()
+        val path = Path().apply {
+            moveTo(ax, ay - w * 0.18f)
+            lineTo(ax, ay + w * 0.05f)
+            lineTo(ax - w * 0.18f, ay)
+            close()
+        }
+        drawPath(path = path, color = color, style = Fill)
     }
 }
