@@ -10,14 +10,14 @@ Weathera menyediakan tampilan antarmuka dalam dua pilihan tema, yaitu Light Mode
 
 | Home | Locations | Settings |
 |:---:|:---:|:---:|
-| ![Home Light Mode](screenshots/home-light.png) | ![Locations Light Mode](screenshots/locations-light.png) | ![Settings Light Mode](screenshots/settings-light.png) |
+| ![Home Light Mode](screenshots/home-light.jpeg) | ![Locations Light Mode](screenshots/locations-light.jpeg) | ![Settings Light Mode](screenshots/settings-light.jpeg) |
 | **Home** | **Locations** | **Settings** |
 
 ### 🌙 Dark Mode
 
 | Home | Locations | Settings |
 |:---:|:---:|:---:|
-| ![Home Dark Mode](screenshots/home-dark.png) | ![Locations Dark Mode](screenshots/locations-dark.png) | ![Settings Dark Mode](screenshots/settings-dark.png) |
+| ![Home Dark Mode](screenshots/home-dark.jpeg) | ![Locations Dark Mode](screenshots/locations-dark.jpeg) | ![Settings Dark Mode](screenshots/settings-dark.jpeg) |
 | **Home** | **Locations** | **Settings** |
 
 ## ✨ Features
