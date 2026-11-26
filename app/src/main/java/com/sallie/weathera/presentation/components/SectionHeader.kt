@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import com.sallie.weathera.ui.theme.WeatheraSpacing
 
 @Composable
@@ -57,6 +58,47 @@ fun SectionHeader(
                 modifier = Modifier
                     .clickable(onClick = onActionClick)
                     .padding(WeatheraSpacing.xs),
+            )
+        }
+    }
+}
+
+@Composable
+fun SettingsHeaderIcon(
+    modifier: Modifier = Modifier,
+    color: androidx.compose.ui.graphics.Color = com.sallie.weathera.ui.theme.Primary,
+) {
+    androidx.compose.foundation.Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        val center = androidx.compose.ui.geometry.Offset(w / 2f, h / 2f)
+        val outerR = w * 0.4f
+        val innerR = w * 0.2f
+
+        drawCircle(
+            color = color,
+            radius = innerR,
+            center = center,
+            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx()),
+        )
+        drawCircle(
+            color = color,
+            radius = outerR,
+            center = center,
+            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx()),
+        )
+        for (i in 0 until 8) {
+            val angle = Math.toRadians(i * 45.0)
+            val startX = (center.x + innerR * Math.cos(angle)).toFloat()
+            val startY = (center.y + innerR * Math.sin(angle)).toFloat()
+            val endX = (center.x + outerR * Math.cos(angle)).toFloat()
+            val endY = (center.y + outerR * Math.sin(angle)).toFloat()
+            drawLine(
+                color = color,
+                start = androidx.compose.ui.geometry.Offset(startX, startY),
+                end = androidx.compose.ui.geometry.Offset(endX, endY),
+                strokeWidth = 2.5.dp.toPx(),
+                cap = androidx.compose.ui.graphics.StrokeCap.Round,
             )
         }
     }

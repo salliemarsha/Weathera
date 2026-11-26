@@ -1,9 +1,21 @@
 package com.sallie.weathera.presentation.components
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -20,7 +32,7 @@ import com.sallie.weathera.ui.theme.Secondary
 import kotlin.math.cos
 import kotlin.math.sin
 
-enum class WeatherCondition(val displayName: String) {
+enum class WeatherCondition(val fallbackName: String) {
     CLEAR_SKY("Cerah"),
     NIGHT_CLEAR("Malam Cerah"),
     PARTLY_CLOUDY("Sebagian Berawan"),
@@ -45,6 +57,21 @@ enum class WeatherCondition(val displayName: String) {
                 else -> PARTLY_CLOUDY
             }
         }
+    }
+}
+
+@Composable
+fun WeatherCondition.getDisplayName(): String {
+    return when (this) {
+        WeatherCondition.CLEAR_SKY -> androidx.compose.ui.res.stringResource(com.sallie.weathera.R.string.cond_clear_sky)
+        WeatherCondition.NIGHT_CLEAR -> androidx.compose.ui.res.stringResource(com.sallie.weathera.R.string.cond_night_clear)
+        WeatherCondition.PARTLY_CLOUDY -> androidx.compose.ui.res.stringResource(com.sallie.weathera.R.string.cond_partly_cloudy)
+        WeatherCondition.CLOUDY -> androidx.compose.ui.res.stringResource(com.sallie.weathera.R.string.cond_cloudy)
+        WeatherCondition.FOG -> androidx.compose.ui.res.stringResource(com.sallie.weathera.R.string.cond_fog)
+        WeatherCondition.DRIZZLE -> androidx.compose.ui.res.stringResource(com.sallie.weathera.R.string.cond_drizzle)
+        WeatherCondition.RAIN -> androidx.compose.ui.res.stringResource(com.sallie.weathera.R.string.cond_rain)
+        WeatherCondition.THUNDERSTORM -> androidx.compose.ui.res.stringResource(com.sallie.weathera.R.string.cond_thunderstorm)
+        WeatherCondition.SNOW -> androidx.compose.ui.res.stringResource(com.sallie.weathera.R.string.cond_snow)
     }
 }
 
@@ -408,5 +435,82 @@ fun RefreshIcon(modifier: Modifier = Modifier, color: Color = Primary) {
             close()
         }
         drawPath(path = path, color = color, style = Fill)
+    }
+}
+
+// =====================================================
+// Animated Weather Icon
+// All animateFloat calls are UNCONDITIONAL (outside when)
+// to comply with Compose composition rules.
+// =====================================================
+
+/**
+ * Animated variant of [WeatherConditionIcon].
+ * All state reads are unconditional; only the modifier application is conditional.
+ */
+@Composable
+fun AnimatedWeatherIcon(
+    condition: WeatherCondition,
+    modifier: Modifier = Modifier,
+    size: Dp = 48.dp,
+) {
+    val transition = rememberInfiniteTransition(label = "weather_anim")
+
+    // All animateFloat must be called unconditionally — never inside a when/if branch
+    val scalePulse by transition.animateFloat(
+        initialValue = 1.00f,
+        targetValue  = 1.06f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "scale_pulse",
+    )
+    val alphaSlow by transition.animateFloat(
+        initialValue = 0.80f,
+        targetValue  = 1.00f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "alpha_slow",
+    )
+    val scaleRain by transition.animateFloat(
+        initialValue = 0.97f,
+        targetValue  = 1.03f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(900, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "scale_rain",
+    )
+    val alphaThunder by transition.animateFloat(
+        initialValue = 0.78f,
+        targetValue  = 1.00f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(600, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "alpha_thunder",
+    )
+
+    // Apply the appropriate modifier based on condition — this is data, not composable state
+    val animModifier = when (condition) {
+        WeatherCondition.CLEAR_SKY,
+        WeatherCondition.NIGHT_CLEAR -> modifier.scale(scalePulse)
+
+        WeatherCondition.PARTLY_CLOUDY,
+        WeatherCondition.CLOUDY,
+        WeatherCondition.FOG -> modifier.alpha(alphaSlow)
+
+        WeatherCondition.DRIZZLE,
+        WeatherCondition.RAIN,
+        WeatherCondition.SNOW -> modifier.scale(scaleRain)
+
+        WeatherCondition.THUNDERSTORM -> modifier.alpha(alphaThunder)
+    }
+
+    Box(modifier = animModifier) {
+        WeatherConditionIcon(condition = condition, size = size)
     }
 }

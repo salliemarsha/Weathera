@@ -4,11 +4,12 @@
     <string name="nav_locations">Lokasi</string>
     <string name="nav_settings">Pengaturan</string>
 
-    <string name="search_city_hint">Cari nama kota…</string>
+    <string name="search_city_hint">Cari nama kota&#8230;</string>
     <string name="tap_to_change_city">Weathera • Ketuk untuk ubah kota</string>
     <string name="hourly_forecast">Prakiraan 24 Jam</string>
     <string name="daily_forecast">Prakiraan 7 Hari</string>
     <string name="weather_details">Rincian Cuaca</string>
+    <string name="weather_details_subtitle">Kondisi atmosfer dan prakiraan mendalam</string>
     <string name="feels_like">Terasa Seperti</string>
     <string name="humidity">Kelembapan</string>
     <string name="wind_speed">Kecepatan Angin</string>
@@ -21,13 +22,47 @@
     <string name="last_updated">Terakhir diperbarui</string>
     <string name="demo_attribution">Data cuaca langsung dari Open-Meteo API</string>
 
+    <string name="cond_clear_sky">Cerah</string>
+    <string name="cond_night_clear">Malam Cerah</string>
+    <string name="cond_partly_cloudy">Sebagian Berawan</string>
+    <string name="cond_cloudy">Berawan</string>
+    <string name="cond_fog">Berkabut</string>
+    <string name="cond_drizzle">Gerimis</string>
+    <string name="cond_rain">Hujan</string>
+    <string name="cond_thunderstorm">Badai Petir</string>
+    <string name="cond_snow">Salju</string>
+
+    <string name="air_quality_title">KUALITAS UDARA</string>
+    <string name="see_details">Lihat rincian &gt;</string>
+    <string name="air_quality_desc">Kualitas udara tergolong bersih dan nyaman untuk bernapas.</string>
+    <string name="feels_like_temp">Terasa seperti %1$d°C</string>
+    <string name="humidity_val">Kelembapan %1$d%%</string>
+    <string name="daylight_remaining">Sinar matahari sepanjang hari</string>
+    <string name="uv_low">Rendah</string>
+    <string name="uv_moderate">Sedang</string>
+    <string name="uv_high">Tinggi</string>
+    <string name="uv_very_high">Sangat Tinggi</string>
+    <string name="uv_extreme">Ekstrem</string>
+
+    <string name="day_today">Hari Ini</string>
+    <string name="day_monday">Senin</string>
+    <string name="day_tuesday">Selasa</string>
+    <string name="day_wednesday">Rabu</string>
+    <string name="day_thursday">Kamis</string>
+    <string name="day_friday">Jumat</string>
+    <string name="day_saturday">Sabtu</string>
+    <string name="day_sunday">Minggu</string>
+
     <string name="locations_title">Pencarian &amp; Lokasi</string>
     <string name="locations_subtitle">Cari dan pilih lokasi kota aktif</string>
-    <string name="search_placeholder">Ketik nama kota (misal: Surakarta, Jakarta)…</string>
+    <string name="search_placeholder">Ketik nama kota (misal: Surakarta, Jakarta)&#8230;</string>
     <string name="active_location_label">Lokasi Aktif</string>
     <string name="search_results_title">Hasil Pencarian</string>
+    <string name="popular_preset_cities">Kota Populer / Preset</string>
+    <string name="saved_cities">Kota Tersimpan</string>
+    <string name="city_not_found">Kota Tidak Ditemukan</string>
     <string name="no_results_found">Kota tidak ditemukan untuk "%1$s"</string>
-    <string name="searching_location">Mencari lokasi kota…</string>
+    <string name="searching_location">Mencari lokasi kota&#8230;</string>
     <string name="select_as_active">Pilih Lokasi Aktif</string>
     <string name="currently_active">Aktif</string>
     <string name="search_error">Pencarian gagal. Periksa koneksi jaringan Anda.</string>
@@ -44,9 +79,72 @@
     <string name="about_description">Weathera adalah aplikasi cuaca modern berbasis Jetpack Compose, Material 3, dan Open-Meteo API.</string>
     <string name="app_version">Versi 1.0.0</string>
 
-    <string name="loading_weather">Memuat data cuaca…</string>
+    <string name="loading_weather">Memuat data cuaca&#8230;</string>
     <string name="retry">Coba Lagi</string>
     <string name="clear">Hapus</string>
     <string name="error_title">Gagal Memuat Data</string>
     <string name="error_network">Tidak ada koneksi internet. Silakan periksa jaringan Anda dan coba lagi.</string>
+
+    <!-- Home screen footer -->
+    <string name="footer_data_source">Data cuaca disediakan oleh Open-Meteo</string>
+    <string name="footer_last_updated">Pembaruan terakhir: %1$s</string>
+    <string name="footer_demo_note">Data saat ini merupakan simulasi demo untuk pratinjau antarmuka.</string>
+
+    <!-- Home screen forecast tabs -->
+    <string name="tab_hourly_forecast">Prakiraan Per Jam</string>
+    <string name="tab_weekly_forecast">Prakiraan Mingguan</string>
+    <string name="tab_label_24h">24 Jam</string>
+    <string name="tab_label_7d">7 Hari</string>
+
+    <!-- Settings subtitle -->
+    <string name="settings_subtitle">Sesuaikan tampilan dan preferensi aplikasi Anda</string>
+    <string name="theme_system_subtitle">Ikuti mode tampilan perangkat Android Anda</string>
+    <string name="theme_light_subtitle">Tampilan latar terang Royal Violet &amp; Lavender</string>
+    <string name="theme_dark_subtitle">Tampilan malam gelap dengan kontras nyaman</string>
+    <string name="language_id_subtitle">Bahasa Indonesia</string>
+    <string name="language_en_subtitle">English (United States)</string>
+
+    <!-- GPS / Lokasi Saat Ini -->
+    <string name="use_current_location">Gunakan Lokasi Saya</string>
+    <string name="current_location_label">Lokasi Saat Ini</string>
+    <string name="locating_device">Mencari lokasi perangkat…</string>
+    <string name="location_permission_rationale">Weathera memerlukan akses lokasi untuk menampilkan cuaca berdasarkan posisi Anda saat ini.</string>
+    <string name="location_permission_denied">Izin lokasi ditolak. Aktifkan di pengaturan aplikasi.</string>
+    <string name="location_permission_denied_permanent">Izin lokasi ditolak secara permanen. Buka Pengaturan untuk mengaktifkannya.</string>
+    <string name="location_disabled">Layanan lokasi dinonaktifkan. Aktifkan GPS di pengaturan perangkat.</string>
+    <string name="location_timeout">Tidak dapat mendeteksi lokasi Anda. Periksa sinyal GPS dan coba lagi.</string>
+    <string name="location_error">Gagal mendapatkan lokasi saat ini. Silakan coba lagi.</string>
+    <string name="open_settings">Buka Pengaturan</string>
+    <string name="gps_indicator">GPS</string>
+
+    <!-- Weather Metric Details -->
+    <string name="detail_us_aqi">AQI AS</string>
+    <string name="detail_pm25">PM2.5</string>
+    <string name="detail_pm10">PM10</string>
+    <string name="detail_ozone">Ozon (O3)</string>
+    <string name="detail_carbon_monoxide">Karbon Monoksida (CO)</string>
+    <string name="detail_current_uv">Indeks UV Saat Ini</string>
+    <string name="detail_max">Maks</string>
+    <string name="detail_category">Kategori</string>
+    <string name="detail_speed">Kecepatan</string>
+    <string name="detail_wind_gusts">Hembusan Angin</string>
+    <string name="detail_direction_angle">Sudut Arah</string>
+    <string name="detail_last_hour">Jam Terakhir</string>
+    <string name="detail_probability">Peluang</string>
+    <string name="detail_daily_accumulation">Akumulasi Harian</string>
+    <string name="detail_actual_temp">Suhu Aktual</string>
+    <string name="detail_difference">Selisih</string>
+    <string name="detail_humidity_wind">Kelembapan: %1$d%% | Angin: %2$.1f km/h</string>
+    <string name="detail_relative_humidity">Kelembapan Relatif</string>
+    <string name="detail_dew_point">Titik Embun</string>
+
+    <!-- Interactive Detail Dialogs -->
+    <string name="daily_detail_title">Rincian Cuaca Harian</string>
+    <string name="daily_detail_temp_range">Rentang Suhu</string>
+    <string name="daily_detail_condition">Kondisi</string>
+    <string name="sun_detail_title">Jadwal Matahari &amp; Siang</string>
+    <string name="sun_detail_duration">Durasi Siang Hari</string>
+    <string name="sun_detail_status">Status Matahari</string>
+    <string name="sun_status_day">Siang Hari — Matahari di atas</string>
+    <string name="sun_status_night">Malam Hari — Matahari terbenam</string>
 </resources>

@@ -29,6 +29,7 @@ interface WeatherRepository {
         longitude: Double = 110.8243,
         cityName: String = "Surakarta",
         country: String = "Indonesia",
+        languageCode: String = "in",
     ): WeatherResult
 }
 
@@ -41,18 +42,20 @@ class WeatherRepositoryImpl(
         longitude: Double,
         cityName: String,
         country: String,
+        languageCode: String,
     ): WeatherResult {
         val dto = apiService.getForecast(
             latitude = latitude,
             longitude = longitude,
         )
-        return mapDtoToDomain(dto, cityName, country)
+        return mapDtoToDomain(dto, cityName, country, languageCode)
     }
 
     private fun mapDtoToDomain(
         dto: WeatherResponseDto,
         cityName: String,
         country: String,
+        languageCode: String,
     ): WeatherResult {
         val current = dto.current
         val hourly = dto.hourly
@@ -72,9 +75,9 @@ class WeatherRepositoryImpl(
         val todayMin = daily?.temperature2mMin?.firstOrNull()?.roundToInt() ?: temp
         val precipProb = daily?.precipitationProbabilityMax?.firstOrNull() ?: 0
         val uvIndex = daily?.uvIndexMax?.firstOrNull()?.roundToInt() ?: 0
-        val uvCategory = getUvCategory(uvIndex)
+        val uvCategory = getUvCategory(uvIndex, languageCode)
 
-        val dateFormatted = formatDateFormatted(current?.time)
+        val dateFormatted = formatDateFormatted(current?.time, languageCode)
         val lastUpdated = formatLastUpdated(current?.time)
 
         val sunriseRaw = daily?.sunrise?.firstOrNull()
@@ -84,6 +87,11 @@ class WeatherRepositoryImpl(
 
         val windDirDeg = current?.windDirection10m?.toFloat() ?: 0f
         val windDirectionText = getWindDirectionCardinal(windDirDeg)
+
+        val aqDesc = if (languageCode == "in") "Kualitas udara tergolong bersih dan nyaman untuk bernapas."
+                     else "Air quality is clean and comfortable for breathing."
+        val daylightRem = if (languageCode == "in") "Sinar matahari sepanjang hari"
+                          else "Daylight throughout the day"
 
         val currentWeather = CurrentWeather(
             cityName = cityName,
@@ -102,21 +110,22 @@ class WeatherRepositoryImpl(
             lastUpdated = lastUpdated,
             airQuality = AirQuality(
                 index = 3,
-                category = "Low Health Risk",
-                description = "Kualitas udara tergolong bersih dan nyaman untuk bernapas.",
+                category = if (languageCode == "in") "Risiko Kesehatan Rendah" else "Low Health Risk",
+                description = aqDesc,
                 progress = 0.30f,
             ),
             sunriseSunset = SunriseSunset(
                 sunrise = sunriseFormatted,
                 sunset = sunsetFormatted,
-                daylightRemaining = "Sinar matahari sepanjang hari",
+                daylightRemaining = daylightRem,
                 sunProgress = calculateSunProgress(sunriseRaw, sunsetRaw, current?.time),
             ),
             windInfo = WindInfo(
                 speedKmh = current?.windSpeed10m?.toFloat() ?: 0f,
                 direction = windDirectionText,
                 angleDegree = windDirDeg,
-                gustsKmh = (current?.windSpeed10m?.toFloat() ?: 0f) * 1.3f,
+                gustsKmh = current?.windGusts10m?.toFloat()
+                    ?: ((current?.windSpeed10m?.toFloat() ?: 0f) * 1.3f),
             ),
             rainfallInfo = RainfallInfo(
                 lastHourMm = precipitation,
@@ -124,7 +133,6 @@ class WeatherRepositoryImpl(
                 probability = precipProb,
             ),
         )
-
         // Process Hourly Forecast (24 Hours)
         val hourlyItems = mutableListOf<HourlyForecastItem>()
         if (hourly?.time != null && hourly.temperature2m != null) {
@@ -137,7 +145,7 @@ class WeatherRepositoryImpl(
                 if (index < totalHours) {
                     val rawTime = hourly.time[index]
                     val isNow = (i == 0)
-                    val displayTime = if (isNow) "Now" else formatHourTime(rawTime)
+                    val displayTime = if (isNow) (if (languageCode == "in") "Sekarang" else "Now") else formatHourTime(rawTime)
                     val hTemp = hourly.temperature2m[index].roundToInt()
                     val hCode = hourly.weatherCode?.getOrNull(index) ?: 0
                     val hProb = hourly.precipitationProbability?.getOrNull(index) ?: 0
@@ -163,7 +171,7 @@ class WeatherRepositoryImpl(
             val count = minOf(7, daily.time.size)
             for (i in 0 until count) {
                 val rawDate = daily.time[i]
-                val dayName = if (i == 0) "Today" else getDayName(rawDate)
+                val dayName = if (i == 0) (if (languageCode == "in") "Hari Ini" else "Today") else getDayName(rawDate, languageCode)
                 val dCode = daily.weatherCode?.getOrNull(i) ?: 0
                 val dMin = daily.temperature2mMin?.getOrNull(i)?.roundToInt() ?: 0
                 val dMax = daily.temperature2mMax?.getOrNull(i)?.roundToInt() ?: 0
@@ -189,13 +197,23 @@ class WeatherRepositoryImpl(
         )
     }
 
-    private fun getUvCategory(uvIndex: Int): String {
-        return when {
-            uvIndex <= 2 -> "Rendah"
-            uvIndex <= 5 -> "Sedang"
-            uvIndex <= 7 -> "Tinggi"
-            uvIndex <= 10 -> "Sangat Tinggi"
-            else -> "Ekstrem"
+    private fun getUvCategory(uvIndex: Int, languageCode: String): String {
+        return if (languageCode == "in") {
+            when {
+                uvIndex <= 2 -> "Rendah"
+                uvIndex <= 5 -> "Sedang"
+                uvIndex <= 7 -> "Tinggi"
+                uvIndex <= 10 -> "Sangat Tinggi"
+                else -> "Ekstrem"
+            }
+        } else {
+            when {
+                uvIndex <= 2 -> "Low"
+                uvIndex <= 5 -> "Moderate"
+                uvIndex <= 7 -> "High"
+                uvIndex <= 10 -> "Very High"
+                else -> "Extreme"
+            }
         }
     }
 
@@ -206,16 +224,17 @@ class WeatherRepositoryImpl(
         return directions[validIndex]
     }
 
-    private fun formatDateFormatted(rawTime: String?): String {
+    private fun formatDateFormatted(rawTime: String?, languageCode: String): String {
+        val locale = if (languageCode == "in") Locale.forLanguageTag("id-ID") else Locale.forLanguageTag("en-US")
         if (rawTime.isNullOrEmpty()) {
-            val sdf = SimpleDateFormat("EEEE, d MMMM yyyy", Locale("id", "ID"))
+            val sdf = SimpleDateFormat("EEEE, d MMMM yyyy", locale)
             return sdf.format(Date())
         }
         return try {
             val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm", Locale.US)
             val date = inputFormat.parse(rawTime)
             if (date != null) {
-                val outputFormat = SimpleDateFormat("EEEE, d MMMM yyyy", Locale("id", "ID"))
+                val outputFormat = SimpleDateFormat("EEEE, d MMMM yyyy", locale)
                 outputFormat.format(date)
             } else {
                 rawTime
@@ -285,22 +304,36 @@ class WeatherRepositoryImpl(
         }
     }
 
-    private fun getDayName(rawDate: String): String {
+    private fun getDayName(rawDate: String, languageCode: String): String {
         return try {
             val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
             val date = inputFormat.parse(rawDate)
             if (date != null) {
                 val cal = Calendar.getInstance()
                 cal.time = date
-                when (cal.get(Calendar.DAY_OF_WEEK)) {
-                    Calendar.MONDAY -> "Monday"
-                    Calendar.TUESDAY -> "Tuesday"
-                    Calendar.WEDNESDAY -> "Wednesday"
-                    Calendar.THURSDAY -> "Thursday"
-                    Calendar.FRIDAY -> "Friday"
-                    Calendar.SATURDAY -> "Saturday"
-                    Calendar.SUNDAY -> "Sunday"
-                    else -> rawDate
+                val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
+                if (languageCode == "in") {
+                    when (dayOfWeek) {
+                        Calendar.MONDAY -> "Senin"
+                        Calendar.TUESDAY -> "Selasa"
+                        Calendar.WEDNESDAY -> "Rabu"
+                        Calendar.THURSDAY -> "Kamis"
+                        Calendar.FRIDAY -> "Jumat"
+                        Calendar.SATURDAY -> "Sabtu"
+                        Calendar.SUNDAY -> "Minggu"
+                        else -> rawDate
+                    }
+                } else {
+                    when (dayOfWeek) {
+                        Calendar.MONDAY -> "Monday"
+                        Calendar.TUESDAY -> "Tuesday"
+                        Calendar.WEDNESDAY -> "Wednesday"
+                        Calendar.THURSDAY -> "Thursday"
+                        Calendar.FRIDAY -> "Friday"
+                        Calendar.SATURDAY -> "Saturday"
+                        Calendar.SUNDAY -> "Sunday"
+                        else -> rawDate
+                    }
                 }
             } else rawDate
         } catch (e: Exception) {

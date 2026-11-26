@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -23,12 +24,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -38,9 +43,11 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -49,6 +56,7 @@ import com.sallie.weathera.domain.model.CurrentWeather
 import com.sallie.weathera.domain.model.DailyForecastItem
 import com.sallie.weathera.domain.model.HourlyForecastItem
 import com.sallie.weathera.domain.model.WeatherDemoData
+import com.sallie.weathera.presentation.components.AnimatedWeatherIcon
 import com.sallie.weathera.presentation.components.LocationPinIcon
 import com.sallie.weathera.presentation.components.PrecipitationIcon
 import com.sallie.weathera.presentation.components.RefreshIcon
@@ -57,11 +65,15 @@ import com.sallie.weathera.presentation.components.SectionHeader
 import com.sallie.weathera.presentation.components.WeatherCard
 import com.sallie.weathera.presentation.components.WeatherCondition
 import com.sallie.weathera.presentation.components.WeatherConditionIcon
+import com.sallie.weathera.presentation.components.getDisplayName
 import com.sallie.weathera.presentation.components.WeatherDetailsSection
 import com.sallie.weathera.presentation.components.WeatherErrorState
 import com.sallie.weathera.presentation.components.WeatherGradientCard
 import com.sallie.weathera.presentation.components.WeatherHouseIllustration
 import com.sallie.weathera.presentation.components.WeatherLoadingIndicator
+import com.sallie.weathera.presentation.viewmodel.DetailType
+import com.sallie.weathera.presentation.viewmodel.DetailUiState
+import com.sallie.weathera.presentation.viewmodel.DetailViewModel
 import com.sallie.weathera.presentation.viewmodel.WeatherUiState
 import com.sallie.weathera.presentation.viewmodel.WeatherViewModel
 import com.sallie.weathera.ui.theme.ElectricLavender
@@ -81,26 +93,43 @@ import com.sallie.weathera.ui.theme.WeatheraTheme
 fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModel: WeatherViewModel = viewModel(),
+    detailViewModel: DetailViewModel = viewModel(),
     isDarkTheme: Boolean = false,
     onToggleTheme: () -> Unit = {},
     onNavigateToLocations: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val openDetail by detailViewModel.openDetail.collectAsStateWithLifecycle()
+
+    if (openDetail != null) {
+        WeatherDetailDialog(
+            detailType = openDetail!!,
+            detailViewModel = detailViewModel,
+            onDismiss = { detailViewModel.closeDetail() },
+        )
+    }
 
     when (val state = uiState) {
         is WeatherUiState.Loading -> {
             Box(
-                modifier = modifier.fillMaxSize(),
+                modifier = modifier
+                    .fillMaxSize()
+                    .statusBarsPadding(),
                 contentAlignment = Alignment.Center,
             ) {
                 WeatherLoadingIndicator(
-                    message = "Memuat data cuaca Surakarta..."
+                    message = stringResource(com.sallie.weathera.R.string.loading_weather)
                 )
             }
         }
         is WeatherUiState.Error -> {
             if (state.previousData != null) {
-                Column(modifier = modifier.fillMaxSize()) {
+                Column(
+                    modifier = modifier
+                        .fillMaxSize()
+                        .statusBarsPadding(),
+                ) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -118,9 +147,11 @@ fun HomeScreen(
                         currentWeather = state.previousData.currentWeather,
                         hourlyForecast = state.previousData.hourlyForecast,
                         dailyForecast = state.previousData.dailyForecast,
+                        detailViewModel = detailViewModel,
                         isDarkTheme = isDarkTheme,
                         onToggleTheme = onToggleTheme,
                         onNavigateToLocations = onNavigateToLocations,
+                        onNavigateToSettings = onNavigateToSettings,
                         onRefresh = { viewModel.refresh() },
                     )
                 }
@@ -141,9 +172,11 @@ fun HomeScreen(
                 currentWeather = state.currentWeather,
                 hourlyForecast = state.hourlyForecast,
                 dailyForecast = state.dailyForecast,
+                detailViewModel = detailViewModel,
                 isDarkTheme = isDarkTheme,
                 onToggleTheme = onToggleTheme,
                 onNavigateToLocations = onNavigateToLocations,
+                onNavigateToSettings = onNavigateToSettings,
                 onRefresh = { viewModel.refresh() },
                 modifier = modifier,
             )
@@ -157,19 +190,42 @@ fun HomeScreenContent(
     currentWeather: CurrentWeather = WeatherDemoData.initialCurrentWeather,
     hourlyForecast: List<HourlyForecastItem> = WeatherDemoData.hourlyForecast,
     dailyForecast: List<DailyForecastItem> = WeatherDemoData.dailyForecast,
+    detailViewModel: DetailViewModel = viewModel(),
     isDarkTheme: Boolean = false,
     onToggleTheme: () -> Unit = {},
     onNavigateToLocations: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
     onRefresh: () -> Unit = {},
 ) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     val scrollState = rememberScrollState()
 
+    var selectedDailyItem by remember { mutableStateOf<DailyForecastItem?>(null) }
+    var showSunriseSunsetDialog by remember { mutableStateOf(false) }
+
+    if (selectedDailyItem != null) {
+        DailyForecastDetailDialog(
+            item = selectedDailyItem!!,
+            onDismiss = { selectedDailyItem = null },
+        )
+    }
+
+    if (showSunriseSunsetDialog) {
+        SunriseSunsetDetailDialog(
+            sunrise = currentWeather.sunriseSunset.sunrise,
+            sunset = currentWeather.sunriseSunset.sunset,
+            progress = currentWeather.sunriseSunset.sunProgress,
+            onDismiss = { showSunriseSunsetDialog = false },
+        )
+    }
+
     if (isLandscape) {
         Column(
             modifier = modifier
                 .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .statusBarsPadding()
                 .verticalScroll(scrollState)
                 .padding(vertical = WeatheraSpacing.lg),
             verticalArrangement = Arrangement.spacedBy(WeatheraSpacing.lg),
@@ -202,10 +258,19 @@ fun HomeScreenContent(
                     HourlyForecastSection(
                         hourlyItems = hourlyForecast,
                         dailyItems = dailyForecast,
+                        contentHorizontalPadding = 0.dp,
                     )
                     WeatherDetailsSection(
                         weather = currentWeather,
                         dailyForecast = dailyForecast,
+                        onAirQualityClick = { detailViewModel.openDetail(DetailType.AIR_QUALITY, currentWeather) },
+                        onUvClick = { detailViewModel.openDetail(DetailType.UV_INDEX, currentWeather) },
+                        onWindClick = { detailViewModel.openDetail(DetailType.WIND, currentWeather) },
+                        onPrecipitationClick = { detailViewModel.openDetail(DetailType.PRECIPITATION, currentWeather) },
+                        onFeelsLikeClick = { detailViewModel.openDetail(DetailType.FEELS_LIKE, currentWeather) },
+                        onHumidityClick = { detailViewModel.openDetail(DetailType.HUMIDITY, currentWeather) },
+                        onSunriseSunsetClick = { showSunriseSunsetDialog = true },
+                        onDayClick = { selectedDailyItem = it },
                     )
                     HomeFooterSection(
                         lastUpdated = currentWeather.lastUpdated,
@@ -219,9 +284,11 @@ fun HomeScreenContent(
         Column(
             modifier = modifier
                 .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .statusBarsPadding()
                 .verticalScroll(scrollState)
                 .padding(vertical = WeatheraSpacing.lg),
-            verticalArrangement = Arrangement.spacedBy(WeatheraSpacing.xl),
+            verticalArrangement = Arrangement.spacedBy(WeatheraSpacing.lg),
         ) {
             HomeHeaderSection(
                 cityName = currentWeather.cityName,
@@ -230,6 +297,7 @@ fun HomeScreenContent(
                 onToggleTheme = onToggleTheme,
                 onSearchClick = onNavigateToLocations,
                 onRefreshClick = onRefresh,
+                onSettingsClick = onNavigateToSettings,
                 modifier = Modifier.padding(horizontal = WeatheraSpacing.lg),
             )
 
@@ -246,6 +314,14 @@ fun HomeScreenContent(
             WeatherDetailsSection(
                 weather = currentWeather,
                 dailyForecast = dailyForecast,
+                onAirQualityClick = { detailViewModel.openDetail(DetailType.AIR_QUALITY, currentWeather) },
+                onUvClick = { detailViewModel.openDetail(DetailType.UV_INDEX, currentWeather) },
+                onWindClick = { detailViewModel.openDetail(DetailType.WIND, currentWeather) },
+                onPrecipitationClick = { detailViewModel.openDetail(DetailType.PRECIPITATION, currentWeather) },
+                onFeelsLikeClick = { detailViewModel.openDetail(DetailType.FEELS_LIKE, currentWeather) },
+                onHumidityClick = { detailViewModel.openDetail(DetailType.HUMIDITY, currentWeather) },
+                onSunriseSunsetClick = { showSunriseSunsetDialog = true },
+                onDayClick = { selectedDailyItem = it },
                 modifier = Modifier.padding(horizontal = WeatheraSpacing.lg),
             )
 
@@ -257,6 +333,260 @@ fun HomeScreenContent(
             Spacer(modifier = Modifier.height(84.dp))
         }
     }
+}
+
+@Composable
+fun WeatherDetailDialog(
+    detailType: DetailType,
+    detailViewModel: DetailViewModel,
+    onDismiss: () -> Unit,
+) {
+    val airQualityState by detailViewModel.airQuality.collectAsStateWithLifecycle()
+    val uvState by detailViewModel.uv.collectAsStateWithLifecycle()
+    val windState by detailViewModel.wind.collectAsStateWithLifecycle()
+    val precipitationState by detailViewModel.precipitation.collectAsStateWithLifecycle()
+    val feelsLikeState by detailViewModel.feelsLike.collectAsStateWithLifecycle()
+    val humidityState by detailViewModel.humidity.collectAsStateWithLifecycle()
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            val titleText = when (detailType) {
+                DetailType.AIR_QUALITY -> stringResource(com.sallie.weathera.R.string.air_quality_title)
+                DetailType.UV_INDEX -> stringResource(com.sallie.weathera.R.string.uv_index)
+                DetailType.WIND -> stringResource(com.sallie.weathera.R.string.wind_speed)
+                DetailType.PRECIPITATION -> stringResource(com.sallie.weathera.R.string.precipitation)
+                DetailType.FEELS_LIKE -> stringResource(com.sallie.weathera.R.string.feels_like)
+                DetailType.HUMIDITY -> stringResource(com.sallie.weathera.R.string.humidity)
+            }
+            Text(text = titleText, fontWeight = FontWeight.Bold)
+        },
+        text = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(280.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                when (detailType) {
+                    DetailType.AIR_QUALITY -> {
+                        DetailStateContent(
+                            state = airQualityState,
+                            content = { data ->
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text("${stringResource(com.sallie.weathera.R.string.detail_us_aqi)}: ${data.usAqi} (${data.category})", fontWeight = FontWeight.Bold)
+                                    Text("${stringResource(com.sallie.weathera.R.string.detail_pm25)}: ${data.pm25} µg/m³")
+                                    Text("${stringResource(com.sallie.weathera.R.string.detail_pm10)}: ${data.pm10} µg/m³")
+                                    Text("${stringResource(com.sallie.weathera.R.string.detail_ozone)}: ${data.ozone} µg/m³")
+                                    Text("${stringResource(com.sallie.weathera.R.string.detail_carbon_monoxide)}: ${data.carbonMonoxide} mg/m³")
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(data.recommendation, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                                }
+                            }
+                        )
+                    }
+                    DetailType.UV_INDEX -> {
+                        DetailStateContent(
+                            state = uvState,
+                            content = { data ->
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text("${stringResource(com.sallie.weathera.R.string.detail_current_uv)}: ${data.currentUvIndex} (${stringResource(com.sallie.weathera.R.string.detail_max)}: ${data.maxUvIndex})", fontWeight = FontWeight.Bold)
+                                    Text("${stringResource(com.sallie.weathera.R.string.detail_category)}: ${data.category}")
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(data.recommendation, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                                }
+                            }
+                        )
+                    }
+                    DetailType.WIND -> {
+                        DetailStateContent(
+                            state = windState,
+                            content = { data ->
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text("${stringResource(com.sallie.weathera.R.string.detail_speed)}: ${data.speedKmh} km/h (${data.directionCardinal})", fontWeight = FontWeight.Bold)
+                                    Text("${stringResource(com.sallie.weathera.R.string.detail_wind_gusts)}: ${data.gustsKmh} km/h")
+                                    Text("${stringResource(com.sallie.weathera.R.string.detail_direction_angle)}: ${data.directionDeg}°")
+                                }
+                            }
+                        )
+                    }
+                    DetailType.PRECIPITATION -> {
+                        DetailStateContent(
+                            state = precipitationState,
+                            content = { data ->
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text("${stringResource(com.sallie.weathera.R.string.detail_last_hour)}: ${data.currentMm} mm", fontWeight = FontWeight.Bold)
+                                    Text("${stringResource(com.sallie.weathera.R.string.detail_probability)}: ${data.probabilityPct}%")
+                                    Text("${stringResource(com.sallie.weathera.R.string.detail_daily_accumulation)}: ${data.dailySumMm} mm")
+                                }
+                            }
+                        )
+                    }
+                    DetailType.FEELS_LIKE -> {
+                        DetailStateContent(
+                            state = feelsLikeState,
+                            content = { data ->
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text("${stringResource(com.sallie.weathera.R.string.detail_actual_temp)}: ${data.actualTemp}°C | ${stringResource(com.sallie.weathera.R.string.feels_like)}: ${data.feelsLikeTemp}°C", fontWeight = FontWeight.Bold)
+                                    Text("${stringResource(com.sallie.weathera.R.string.detail_difference)}: ${data.diffCelsius}°C")
+                                    Text(stringResource(com.sallie.weathera.R.string.detail_humidity_wind, data.humidity, data.windSpeedKmh))
+                                }
+                            }
+                        )
+                    }
+                    DetailType.HUMIDITY -> {
+                        DetailStateContent(
+                            state = humidityState,
+                            content = { data ->
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text("${stringResource(com.sallie.weathera.R.string.detail_relative_humidity)}: ${data.humidity}%", fontWeight = FontWeight.Bold)
+                                    Text("${stringResource(com.sallie.weathera.R.string.detail_category)}: ${data.humidityCategory}")
+                                    Text("${stringResource(com.sallie.weathera.R.string.detail_dew_point)}: ${data.dewPointC}°C")
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(android.R.string.ok))
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surface,
+    )
+}
+
+@Composable
+private fun <T> DetailStateContent(
+    state: DetailUiState<T>,
+    content: @Composable (T) -> Unit,
+) {
+    when (state) {
+        is DetailUiState.Idle, is DetailUiState.Loading -> {
+            CircularProgressIndicator(color = Primary)
+        }
+        is DetailUiState.Error -> {
+            Text(text = state.message, color = MaterialTheme.colorScheme.error)
+        }
+        is DetailUiState.Success -> {
+            content(state.data)
+        }
+    }
+}
+
+@Composable
+fun DailyForecastDetailDialog(
+    item: DailyForecastItem,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = stringResource(com.sallie.weathera.R.string.daily_detail_title), fontWeight = FontWeight.Bold)
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = com.sallie.weathera.presentation.components.formatDayName(item.dayName),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Primary,
+                )
+                WeatherConditionIcon(condition = item.condition, size = 48.dp)
+                Text(
+                    text = item.condition.getDisplayName(),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(stringResource(com.sallie.weathera.R.string.daily_detail_temp_range))
+                    Text("${item.tempMin}° - ${item.tempMax}°C", fontWeight = FontWeight.Bold)
+                }
+                if (item.rainProbability > 0) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(stringResource(com.sallie.weathera.R.string.rain_chance))
+                        Text("${item.rainProbability}%", fontWeight = FontWeight.Bold, color = Color(0xFF60A5FA))
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(android.R.string.ok))
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surface,
+    )
+}
+
+@Composable
+fun SunriseSunsetDetailDialog(
+    sunrise: String,
+    sunset: String,
+    progress: Float,
+    onDismiss: () -> Unit,
+) {
+    val isDay = progress in 0.0f..1.0f
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = stringResource(com.sallie.weathera.R.string.sun_detail_title), fontWeight = FontWeight.Bold)
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(stringResource(com.sallie.weathera.R.string.sunrise))
+                    Text(sunrise, fontWeight = FontWeight.Bold, color = Color(0xFFFBBF24))
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(stringResource(com.sallie.weathera.R.string.sunset))
+                    Text(sunset, fontWeight = FontWeight.Bold, color = Color(0xFF8B5CF6))
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(stringResource(com.sallie.weathera.R.string.sun_detail_status))
+                    Text(
+                        text = if (isDay) stringResource(com.sallie.weathera.R.string.sun_status_day) else stringResource(com.sallie.weathera.R.string.sun_status_night),
+                        fontWeight = FontWeight.Bold,
+                        color = Primary,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(android.R.string.ok))
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surface,
+    )
 }
 
 // -------------------------------------------------------------
@@ -271,6 +601,7 @@ private fun HomeHeaderSection(
     onToggleTheme: () -> Unit,
     onSearchClick: () -> Unit,
     onRefreshClick: () -> Unit,
+    onSettingsClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -278,7 +609,6 @@ private fun HomeHeaderSection(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Location Info
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -321,7 +651,7 @@ private fun HomeHeaderSection(
                     )
                 }
                 Text(
-                    text = "Weathera • Tap untuk ubah kota",
+                    text = stringResource(com.sallie.weathera.R.string.tap_to_change_city),
                     style = MaterialTheme.typography.bodySmall,
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.primary,
@@ -330,7 +660,6 @@ private fun HomeHeaderSection(
             }
         }
 
-        // Action Buttons: Theme Toggle, Refresh, Search
         Row(verticalAlignment = Alignment.CenterVertically) {
             // Theme toggle button
             Surface(
@@ -366,24 +695,6 @@ private fun HomeHeaderSection(
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     RefreshIcon(color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(16.dp))
-                }
-            }
-
-            Spacer(modifier = Modifier.width(WeatheraSpacing.xs))
-
-            // Search shortcut button
-            Surface(
-                onClick = onSearchClick,
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surface,
-                border = androidx.compose.foundation.BorderStroke(
-                    1.dp,
-                    MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                ),
-                modifier = Modifier.size(38.dp),
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    SearchHeaderIcon(color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(16.dp))
                 }
             }
         }
@@ -425,7 +736,7 @@ private fun HeroCurrentWeatherCard(
                     .padding(horizontal = WeatheraSpacing.md, vertical = 3.dp),
             ) {
                 Text(
-                    text = weather.condition.displayName,
+                    text = weather.condition.getDisplayName(),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.White,
@@ -466,7 +777,7 @@ private fun HeroCurrentWeatherCard(
             }
 
             Text(
-                text = "${weather.condition.displayName} • H:${weather.tempMax}°  L:${weather.tempMin}°",
+                text = "${weather.condition.getDisplayName()} • H:${weather.tempMax}°  L:${weather.tempMin}°",
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
                 color = Color.White.copy(alpha = 0.9f),
@@ -475,9 +786,22 @@ private fun HeroCurrentWeatherCard(
 
         Spacer(modifier = Modifier.height(WeatheraSpacing.sm))
 
+        // Animated weather condition icon
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center,
+        ) {
+            AnimatedWeatherIcon(
+                condition = weather.condition,
+                size = 72.dp,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(WeatheraSpacing.xs))
+
         // Cozy Stylized Weather House Illustration
         WeatherHouseIllustration(
-            height = 175.dp,
+            height = 160.dp,
         )
 
         Spacer(modifier = Modifier.height(WeatheraSpacing.sm))
@@ -489,12 +813,12 @@ private fun HeroCurrentWeatherCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Terasa seperti ${weather.feelsLike}°C",
+                text = stringResource(com.sallie.weathera.R.string.feels_like_temp, weather.feelsLike),
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.White.copy(alpha = 0.9f),
             )
             Text(
-                text = "Kelembapan ${weather.humidity}%",
+                text = stringResource(com.sallie.weathera.R.string.humidity_val, weather.humidity),
                 style = MaterialTheme.typography.bodySmall,
                 color = ElectricLavender,
                 fontWeight = FontWeight.Medium,
@@ -512,6 +836,7 @@ private fun HourlyForecastSection(
     hourlyItems: List<HourlyForecastItem>,
     dailyItems: List<DailyForecastItem>,
     modifier: Modifier = Modifier,
+    contentHorizontalPadding: Dp = WeatheraSpacing.lg,
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
 
@@ -520,7 +845,7 @@ private fun HourlyForecastSection(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = WeatheraSpacing.lg),
+                .padding(horizontal = contentHorizontalPadding),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -536,20 +861,20 @@ private fun HourlyForecastSection(
                     .padding(4.dp),
             ) {
                 ForecastTabButton(
-                    title = "Hourly Forecast",
+                    title = stringResource(com.sallie.weathera.R.string.tab_hourly_forecast),
                     isSelected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 ForecastTabButton(
-                    title = "Weekly Forecast",
+                    title = stringResource(com.sallie.weathera.R.string.tab_weekly_forecast),
                     isSelected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
                 )
             }
 
             Text(
-                text = if (selectedTab == 0) "24 Jam" else "7 Hari",
+                text = if (selectedTab == 0) stringResource(com.sallie.weathera.R.string.tab_label_24h) else stringResource(com.sallie.weathera.R.string.tab_label_7d),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Bold,
@@ -561,7 +886,7 @@ private fun HourlyForecastSection(
         if (selectedTab == 0) {
             // Horizontal 24-Hour LazyRow
             LazyRow(
-                contentPadding = PaddingValues(horizontal = WeatheraSpacing.lg),
+                contentPadding = PaddingValues(horizontal = contentHorizontalPadding),
                 horizontalArrangement = Arrangement.spacedBy(WeatheraSpacing.sm),
             ) {
                 items(hourlyItems) { item ->
@@ -571,7 +896,7 @@ private fun HourlyForecastSection(
         } else {
             // Quick Weekly Preview Horizontal Row
             LazyRow(
-                contentPadding = PaddingValues(horizontal = WeatheraSpacing.lg),
+                contentPadding = PaddingValues(horizontal = contentHorizontalPadding),
                 horizontalArrangement = Arrangement.spacedBy(WeatheraSpacing.sm),
             ) {
                 items(dailyItems) { item ->
@@ -658,11 +983,12 @@ private fun HourlyForecastCard(
 
             Spacer(modifier = Modifier.height(WeatheraSpacing.sm))
 
-            // Weather Icon
-            WeatherConditionIcon(
-                condition = item.condition,
-                size = 30.dp,
-            )
+            // Weather Icon (animated for current hour)
+            if (isHighlighted) {
+                AnimatedWeatherIcon(condition = item.condition, size = 30.dp)
+            } else {
+                WeatherConditionIcon(condition = item.condition, size = 30.dp)
+            }
 
             Spacer(modifier = Modifier.height(WeatheraSpacing.sm))
 
@@ -725,7 +1051,7 @@ private fun WeeklyPreviewCard(
             verticalArrangement = Arrangement.Center,
         ) {
             Text(
-                text = if (isToday) "Today" else item.dayName.take(3),
+                text = if (isToday) stringResource(com.sallie.weathera.R.string.day_today) else item.dayName.take(3),
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
                 color = if (isToday) Color.White else MaterialTheme.colorScheme.onSurface,
@@ -772,7 +1098,7 @@ private fun HomeFooterSection(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            text = "Data Cuaca disediakan oleh Open-Meteo",
+            text = stringResource(com.sallie.weathera.R.string.footer_data_source),
             style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.primary,
@@ -782,7 +1108,7 @@ private fun HomeFooterSection(
         Spacer(modifier = Modifier.height(WeatheraSpacing.xs))
 
         Text(
-            text = "Pembaruan terakhir: $lastUpdated",
+            text = stringResource(com.sallie.weathera.R.string.footer_last_updated, lastUpdated),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -791,7 +1117,7 @@ private fun HomeFooterSection(
         Spacer(modifier = Modifier.height(WeatheraSpacing.xs))
 
         Text(
-            text = "Data saat ini merupakan simulasi demo untuk pratinjau antarmuka pengguna.",
+            text = stringResource(com.sallie.weathera.R.string.footer_demo_note),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
             textAlign = TextAlign.Center,

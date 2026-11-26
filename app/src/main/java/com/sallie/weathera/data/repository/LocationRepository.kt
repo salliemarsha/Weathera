@@ -21,7 +21,7 @@ class LocationRepositoryImpl(
             .distinctBy { "${it.name}-${it.country}-${it.admin1}" }
             .map { dtoLocation ->
                 SearchResultLocation(
-                    id = (dtoLocation.id ?: System.currentTimeMillis()).toString(),
+                    id = dtoLocation.id?.toString() ?: "loc_${dtoLocation.latitude}_${dtoLocation.longitude}_${System.nanoTime()}",
                     cityName = dtoLocation.name ?: "",
                     country = dtoLocation.country ?: "",
                     adminRegion = dtoLocation.admin1,

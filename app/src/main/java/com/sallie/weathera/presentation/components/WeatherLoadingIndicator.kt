@@ -31,7 +31,7 @@ import com.sallie.weathera.ui.theme.WeatheraSpacing
 @Composable
 fun WeatherLoadingIndicator(
     modifier: Modifier = Modifier,
-    message: String? = "Memuat data cuaca...",
+    message: String? = null,
     size: Dp = 48.dp,
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")

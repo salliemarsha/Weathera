@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.sallie.weathera.R
 import com.sallie.weathera.ui.theme.StatusError
 import com.sallie.weathera.ui.theme.WeatheraSpacing
 
@@ -28,10 +29,12 @@ import com.sallie.weathera.ui.theme.WeatheraSpacing
 fun WeatherErrorState(
     message: String,
     modifier: Modifier = Modifier,
-    title: String = "Gagal Memuat Data",
-    retryText: String? = "Coba Lagi",
+    title: String? = null,
+    retryText: String? = null,
     onRetry: (() -> Unit)? = null,
 ) {
+    val displayTitle = title ?: androidx.compose.ui.res.stringResource(com.sallie.weathera.R.string.error_title)
+    val displayRetryText = retryText ?: if (onRetry != null) androidx.compose.ui.res.stringResource(com.sallie.weathera.R.string.retry) else null
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -67,7 +70,7 @@ fun WeatherErrorState(
         Spacer(modifier = Modifier.height(WeatheraSpacing.lg))
 
         Text(
-            text = title,
+            text = displayTitle,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
@@ -83,10 +86,10 @@ fun WeatherErrorState(
             textAlign = TextAlign.Center,
         )
 
-        if (retryText != null && onRetry != null) {
+        if (displayRetryText != null && onRetry != null) {
             Spacer(modifier = Modifier.height(WeatheraSpacing.lg))
             WeatherPrimaryButton(
-                text = retryText,
+                text = displayRetryText,
                 onClick = onRetry,
             )
         }

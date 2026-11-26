@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -74,6 +75,8 @@ fun SettingsScreenContent(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .statusBarsPadding()
             .verticalScroll(scrollState)
             .padding(horizontal = WeatheraSpacing.lg, vertical = WeatheraSpacing.lg),
         verticalArrangement = Arrangement.spacedBy(WeatheraSpacing.xl),
@@ -128,7 +131,7 @@ private fun SettingsHeaderSection() {
             color = MaterialTheme.colorScheme.onBackground,
         )
         Text(
-            text = stringResource(R.string.appearance_section),
+            text = stringResource(R.string.settings_subtitle),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -152,19 +155,19 @@ private fun AppearanceSection(
             Column(modifier = Modifier.padding(WeatheraSpacing.md)) {
                 ThemeOptionItem(
                     title = stringResource(R.string.theme_system),
-                    subtitle = "Ikuti mode tampilan perangkat Android Anda",
+                    subtitle = stringResource(R.string.theme_system_subtitle),
                     selected = (selectedTheme == "SYSTEM"),
                     onClick = { onSelectTheme("SYSTEM") },
                 )
                 ThemeOptionItem(
                     title = stringResource(R.string.theme_light),
-                    subtitle = "Tampilan latar terang Royal Violet & Lavender",
+                    subtitle = stringResource(R.string.theme_light_subtitle),
                     selected = (selectedTheme == "LIGHT"),
                     onClick = { onSelectTheme("LIGHT") },
                 )
                 ThemeOptionItem(
                     title = stringResource(R.string.theme_dark),
-                    subtitle = "Tampilan malam gelap dengan kontras nyaman",
+                    subtitle = stringResource(R.string.theme_dark_subtitle),
                     selected = (selectedTheme == "DARK"),
                     onClick = { onSelectTheme("DARK") },
                     showDivider = false,
@@ -241,13 +244,13 @@ private fun LanguageSection(
             Column(modifier = Modifier.padding(WeatheraSpacing.md)) {
                 LanguageOptionItem(
                     title = stringResource(R.string.language_indonesian),
-                    subtitle = "Bahasa Indonesia",
+                    subtitle = stringResource(R.string.language_id_subtitle),
                     selected = (selectedLanguage == "in"),
                     onClick = { onSelectLanguage("in") },
                 )
                 LanguageOptionItem(
                     title = stringResource(R.string.language_english),
-                    subtitle = "English (United States)",
+                    subtitle = stringResource(R.string.language_en_subtitle),
                     selected = (selectedLanguage == "en"),
                     onClick = { onSelectLanguage("en") },
                     showDivider = false,

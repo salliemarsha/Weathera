@@ -4,11 +4,12 @@
     <string name="nav_locations">Locations</string>
     <string name="nav_settings">Settings</string>
 
-    <string name="search_city_hint">Search city...</string>
+    <string name="search_city_hint">Search city&#8230;</string>
     <string name="tap_to_change_city">Weathera • Tap to change city</string>
     <string name="hourly_forecast">24-Hour Forecast</string>
     <string name="daily_forecast">7-Day Forecast</string>
     <string name="weather_details">Weather Details</string>
+    <string name="weather_details_subtitle">Atmospheric conditions and in-depth forecast</string>
     <string name="feels_like">Feels Like</string>
     <string name="humidity">Humidity</string>
     <string name="wind_speed">Wind Speed</string>
@@ -21,13 +22,47 @@
     <string name="last_updated">Last updated</string>
     <string name="demo_attribution">Live data powered by Open-Meteo API</string>
 
+    <string name="cond_clear_sky">Clear Sky</string>
+    <string name="cond_night_clear">Clear Night</string>
+    <string name="cond_partly_cloudy">Partly Cloudy</string>
+    <string name="cond_cloudy">Overcast</string>
+    <string name="cond_fog">Foggy</string>
+    <string name="cond_drizzle">Drizzle</string>
+    <string name="cond_rain">Rain</string>
+    <string name="cond_thunderstorm">Thunderstorm</string>
+    <string name="cond_snow">Snow</string>
+
+    <string name="air_quality_title">AIR QUALITY</string>
+    <string name="see_details">View details &gt;</string>
+    <string name="air_quality_desc">Air quality is clean and healthy for outdoor activities.</string>
+    <string name="feels_like_temp">Feels like %1$d°C</string>
+    <string name="humidity_val">Humidity %1$d%%</string>
+    <string name="daylight_remaining">Daylight throughout the day</string>
+    <string name="uv_low">Low</string>
+    <string name="uv_moderate">Moderate</string>
+    <string name="uv_high">High</string>
+    <string name="uv_very_high">Very High</string>
+    <string name="uv_extreme">Extreme</string>
+
+    <string name="day_today">Today</string>
+    <string name="day_monday">Monday</string>
+    <string name="day_tuesday">Tuesday</string>
+    <string name="day_wednesday">Wednesday</string>
+    <string name="day_thursday">Thursday</string>
+    <string name="day_friday">Friday</string>
+    <string name="day_saturday">Saturday</string>
+    <string name="day_sunday">Sunday</string>
+
     <string name="locations_title">Locations &amp; Search</string>
     <string name="locations_subtitle">Search and select active city</string>
-    <string name="search_placeholder">Type city name (e.g. Surakarta, Jakarta)...</string>
+    <string name="search_placeholder">Type city name (e.g. Surakarta, Jakarta)&#8230;</string>
     <string name="active_location_label">Active Location</string>
     <string name="search_results_title">Search Results</string>
+    <string name="popular_preset_cities">Popular / Preset Cities</string>
+    <string name="saved_cities">Saved Cities</string>
+    <string name="city_not_found">City Not Found</string>
     <string name="no_results_found">No cities found for "%1$s"</string>
-    <string name="searching_location">Searching cities...</string>
+    <string name="searching_location">Searching cities&#8230;</string>
     <string name="select_as_active">Select as Active</string>
     <string name="currently_active">Active</string>
     <string name="search_error">Search failed. Check network connection.</string>
@@ -44,9 +79,72 @@
     <string name="about_description">Weathera is a modern weather application built with Jetpack Compose, Material 3, and Open-Meteo API.</string>
     <string name="app_version">Version 1.0.0</string>
 
-    <string name="loading_weather">Loading weather data...</string>
+    <string name="loading_weather">Loading weather data&#8230;</string>
     <string name="retry">Retry</string>
     <string name="clear">Clear</string>
     <string name="error_title">Failed to Load Data</string>
     <string name="error_network">No internet connection. Please check your network and try again.</string>
+
+    <!-- Home screen footer -->
+    <string name="footer_data_source">Weather data provided by Open-Meteo</string>
+    <string name="footer_last_updated">Last updated: %1$s</string>
+    <string name="footer_demo_note">Current data is a demo simulation for UI preview.</string>
+
+    <!-- Home screen forecast tabs -->
+    <string name="tab_hourly_forecast">Hourly Forecast</string>
+    <string name="tab_weekly_forecast">Weekly Forecast</string>
+    <string name="tab_label_24h">24h</string>
+    <string name="tab_label_7d">7 Days</string>
+
+    <!-- Settings subtitle -->
+    <string name="settings_subtitle">Customize your app appearance and preferences</string>
+    <string name="theme_system_subtitle">Follow your Android device display settings</string>
+    <string name="theme_light_subtitle">Light background with Royal Violet &amp; Lavender</string>
+    <string name="theme_dark_subtitle">Dark night display with comfortable contrast</string>
+    <string name="language_id_subtitle">Bahasa Indonesia</string>
+    <string name="language_en_subtitle">English (United States)</string>
+
+    <!-- GPS / Current Location -->
+    <string name="use_current_location">Use My Location</string>
+    <string name="current_location_label">Current Location</string>
+    <string name="locating_device">Locating device…</string>
+    <string name="location_permission_rationale">Weathera needs location access to show weather for your current position.</string>
+    <string name="location_permission_denied">Location permission denied. Grant it in app settings.</string>
+    <string name="location_permission_denied_permanent">Location permission is permanently denied. Open Settings to enable it.</string>
+    <string name="location_disabled">Location services are off. Enable GPS in device settings.</string>
+    <string name="location_timeout">Could not get your location. Check GPS signal and try again.</string>
+    <string name="location_error">Failed to get current location. Please try again.</string>
+    <string name="open_settings">Open Settings</string>
+    <string name="gps_indicator">GPS</string>
+
+    <!-- Weather Metric Details -->
+    <string name="detail_us_aqi">US AQI</string>
+    <string name="detail_pm25">PM2.5</string>
+    <string name="detail_pm10">PM10</string>
+    <string name="detail_ozone">Ozone (O3)</string>
+    <string name="detail_carbon_monoxide">Carbon Monoxide (CO)</string>
+    <string name="detail_current_uv">Current UV Index</string>
+    <string name="detail_max">Max</string>
+    <string name="detail_category">Category</string>
+    <string name="detail_speed">Speed</string>
+    <string name="detail_wind_gusts">Wind Gusts</string>
+    <string name="detail_direction_angle">Direction Angle</string>
+    <string name="detail_last_hour">Last Hour</string>
+    <string name="detail_probability">Probability</string>
+    <string name="detail_daily_accumulation">Daily Accumulation</string>
+    <string name="detail_actual_temp">Actual Temp</string>
+    <string name="detail_difference">Difference</string>
+    <string name="detail_humidity_wind">Humidity: %1$d%% | Wind: %2$.1f km/h</string>
+    <string name="detail_relative_humidity">Relative Humidity</string>
+    <string name="detail_dew_point">Dew Point</string>
+
+    <!-- Interactive Detail Dialogs -->
+    <string name="daily_detail_title">Daily Weather Details</string>
+    <string name="daily_detail_temp_range">Temperature Range</string>
+    <string name="daily_detail_condition">Condition</string>
+    <string name="sun_detail_title">Sun Schedule &amp; Daylight</string>
+    <string name="sun_detail_duration">Daylight Duration</string>
+    <string name="sun_detail_status">Solar Status</string>
+    <string name="sun_status_day">Daytime — Sun is up</string>
+    <string name="sun_status_night">Nighttime — Sun has set</string>
 </resources>

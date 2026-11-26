@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.io.IOException
 import java.net.ConnectException
 import java.net.UnknownHostException
 
@@ -57,6 +56,7 @@ class WeatherViewModel @JvmOverloads constructor(
                         country = prefs.activeCountry,
                         latitude = prefs.activeLatitude,
                         longitude = prefs.activeLongitude,
+                        languageCode = prefs.languageCode,
                     )
                 }
             } catch (_: Exception) {
@@ -71,6 +71,7 @@ class WeatherViewModel @JvmOverloads constructor(
         country: String = currentPreferences.activeCountry,
         latitude: Double = currentPreferences.activeLatitude,
         longitude: Double = currentPreferences.activeLongitude,
+        languageCode: String = currentPreferences.languageCode,
     ) {
         viewModelScope.launch {
             val currentState = _uiState.value
@@ -90,6 +91,7 @@ class WeatherViewModel @JvmOverloads constructor(
                     longitude = longitude,
                     cityName = cityName,
                     country = country,
+                    languageCode = languageCode,
                 )
                 _uiState.value = WeatherUiState.Success(
                     currentWeather = result.currentWeather,
@@ -99,11 +101,7 @@ class WeatherViewModel @JvmOverloads constructor(
                 )
             } catch (e: Exception) {
                 val isOffline = (e is UnknownHostException || e is ConnectException)
-                val errorMessage = when {
-                    isOffline -> "Tidak ada koneksi internet. Silakan periksa jaringan Anda dan coba lagi."
-                    e is IOException -> "Gagal terhubung ke server cuaca. Silakan coba lagi."
-                    else -> e.localizedMessage ?: "Terjadi kesalahan saat memuat data cuaca."
-                }
+                val errorMessage = e.localizedMessage ?: "Failed to load weather data."
 
                 val prevData = when (currentState) {
                     is WeatherUiState.Success -> currentState.copy(isRefreshing = false)

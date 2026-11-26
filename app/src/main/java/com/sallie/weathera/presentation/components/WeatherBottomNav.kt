@@ -1,8 +1,8 @@
 package com.sallie.weathera.presentation.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -31,13 +32,15 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sallie.weathera.R
 import com.sallie.weathera.ui.theme.ElectricLavender
 import com.sallie.weathera.ui.theme.Primary
-import com.sallie.weathera.ui.theme.Secondary
 
 enum class NavDestination {
     HOME,
@@ -46,24 +49,22 @@ enum class NavDestination {
 }
 
 /**
- * Curved Floating Bottom Navigation Bar
- * Directly inspired by the reference Dribbble design (Home icon, Center FAB plus, List/Locations icon).
+ * Weathera 3-Tab Bottom Navigation Bar (Home, Locations, Settings)
  */
 @Composable
 fun WeatherBottomNav(
     currentDestination: NavDestination,
     onNavigate: (NavDestination) -> Unit,
-    onCenterFabClick: () -> Unit,
     modifier: Modifier = Modifier,
     savedLocationsCount: Int = 0,
 ) {
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .navigationBarsPadding()
             .padding(horizontal = 24.dp, vertical = 12.dp),
         contentAlignment = Alignment.BottomCenter,
     ) {
-        // Floating pill container with subtle blur/gradient
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
@@ -76,7 +77,7 @@ fun WeatherBottomNav(
                 ),
             shape = RoundedCornerShape(34.dp),
             color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
-            border = androidx.compose.foundation.BorderStroke(
+            border = BorderStroke(
                 1.5.dp,
                 Brush.linearGradient(
                     colors = listOf(
@@ -89,64 +90,41 @@ fun WeatherBottomNav(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 32.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 // 1. Home Tab
-                val isHomeSelected = currentDestination == NavDestination.HOME
                 NavTabItem(
-                    label = "Home",
-                    isSelected = isHomeSelected,
+                    label = stringResource(R.string.nav_home),
+                    isSelected = (currentDestination == NavDestination.HOME),
                     onClick = { onNavigate(NavDestination.HOME) },
                     icon = { selected ->
                         HomeNavIcon(isSelected = selected)
                     },
                 )
 
-                // Placeholder space for the Center Elevated FAB
-                Spacer(modifier = Modifier.size(54.dp))
-
                 // 2. Locations Tab
-                val isLocationsSelected = currentDestination == NavDestination.LOCATIONS
                 NavTabItem(
-                    label = "Locations",
-                    isSelected = isLocationsSelected,
+                    label = stringResource(R.string.nav_locations),
+                    isSelected = (currentDestination == NavDestination.LOCATIONS),
                     onClick = { onNavigate(NavDestination.LOCATIONS) },
                     badgeCount = savedLocationsCount,
                     icon = { selected ->
                         LocationsNavIcon(isSelected = selected)
                     },
                 )
-            }
-        }
 
-        // Center Floating Action Button with Glow
-        Box(
-            modifier = Modifier
-                .offset(y = (-14).dp)
-                .size(58.dp)
-                .shadow(
-                    elevation = 12.dp,
-                    shape = CircleShape,
-                    ambientColor = Primary,
-                    spotColor = Primary,
+                // 3. Settings Tab
+                NavTabItem(
+                    label = stringResource(R.string.nav_settings),
+                    isSelected = (currentDestination == NavDestination.SETTINGS),
+                    onClick = { onNavigate(NavDestination.SETTINGS) },
+                    icon = { selected ->
+                        SettingsNavIcon(isSelected = selected)
+                    },
                 )
-                .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(ElectricLavender, Primary, Secondary),
-                    ),
-                )
-                .border(2.dp, Color.White.copy(alpha = 0.6f), CircleShape)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onCenterFabClick,
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            PlusNavIcon(color = Color.White)
+            }
         }
     }
 }
@@ -167,7 +145,7 @@ private fun NavTabItem(
                 indication = null,
                 onClick = onClick,
             )
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(horizontal = 16.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -228,7 +206,6 @@ private fun HomeNavIcon(isSelected: Boolean) {
         val h = size.height
         val color = if (isSelected) activeColor else inactiveColor
 
-        // Stylized house icon
         val path = Path().apply {
             moveTo(w * 0.5f, h * 0.15f)
             lineTo(w * 0.9f, h * 0.50f)
@@ -242,7 +219,7 @@ private fun HomeNavIcon(isSelected: Boolean) {
         drawPath(
             path = path,
             color = color,
-            style = if (isSelected) androidx.compose.ui.graphics.drawscope.Fill else Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round),
+            style = if (isSelected) Fill else Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round),
         )
     }
 }
@@ -257,7 +234,6 @@ private fun LocationsNavIcon(isSelected: Boolean) {
         val h = size.height
         val color = if (isSelected) activeColor else inactiveColor
 
-        // 3 horizontal list bars with dots
         val barH = 2.5f
         for (i in 0..2) {
             val y = h * (0.28f + i * 0.24f)
@@ -278,27 +254,43 @@ private fun LocationsNavIcon(isSelected: Boolean) {
 }
 
 @Composable
-private fun PlusNavIcon(color: Color = Color.White) {
-    Canvas(modifier = Modifier.size(22.dp)) {
+private fun SettingsNavIcon(isSelected: Boolean) {
+    val activeColor = Primary
+    val inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant
+
+    Canvas(modifier = Modifier.size(24.dp)) {
         val w = size.width
         val h = size.height
-        val stroke = 3.dp.toPx()
+        val color = if (isSelected) activeColor else inactiveColor
+        val center = Offset(w / 2f, h / 2f)
+        val outerR = w * 0.38f
+        val innerR = w * 0.18f
 
-        // Horizontal bar
-        drawLine(
+        drawCircle(
             color = color,
-            start = Offset(w * 0.2f, h * 0.5f),
-            end = Offset(w * 0.8f, h * 0.5f),
-            strokeWidth = stroke,
-            cap = StrokeCap.Round,
+            radius = innerR,
+            center = center,
+            style = if (isSelected) Fill else Stroke(width = 2.dp.toPx()),
         )
-        // Vertical bar
-        drawLine(
+        drawCircle(
             color = color,
-            start = Offset(w * 0.5f, h * 0.2f),
-            end = Offset(w * 0.5f, h * 0.8f),
-            strokeWidth = stroke,
-            cap = StrokeCap.Round,
+            radius = outerR,
+            center = center,
+            style = Stroke(width = 2.dp.toPx()),
         )
+        for (i in 0 until 6) {
+            val angle = Math.toRadians(i * 60.0)
+            val startX = (center.x + innerR * Math.cos(angle)).toFloat()
+            val startY = (center.y + innerR * Math.sin(angle)).toFloat()
+            val endX = (center.x + (outerR + 3.dp.toPx()) * Math.cos(angle)).toFloat()
+            val endY = (center.y + (outerR + 3.dp.toPx()) * Math.sin(angle)).toFloat()
+            drawLine(
+                color = color,
+                start = Offset(startX, startY),
+                end = Offset(endX, endY),
+                strokeWidth = 2.5.dp.toPx(),
+                cap = StrokeCap.Round,
+            )
+        }
     }
 }
